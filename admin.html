@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDentix – Admin Registration</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --purple:      #8a2be2;
+    --purple-dark: #6a0dad;
+    --purple-glow: rgba(138,43,226,.32);
+    --purple-soft: rgba(138,43,226,.08);
+    --text:        #1a0a2e;
+    --text-muted:  #7a6a8a;
+    --border:      #d8c8f0;
+    --error:       #dc2626;
+    --error-bg:    #fff5f5;
+    --success:     #059669;
+    --success-bg:  #f0fdf4;
+    --radius:      14px;
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f8f5ff;
+    display: flex;
+    align-items: stretch;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .left-panel {
+    flex: 1;
+    background: linear-gradient(145deg, #1a0a2e 0%, #3d1278 50%, #8a2be2 100%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 60px 50px;
+    position: relative; overflow: hidden;
+  }
+  .left-panel::before {
+    content: ''; position: absolute;
+    width: 500px; height: 500px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(138,43,226,.4) 0%, transparent 70%);
+    top: -100px; left: -100px;
+    animation: float 8s ease-in-out infinite;
+  }
+  .left-panel::after {
+    content: ''; position: absolute;
+    width: 350px; height: 350px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,150,255,.2) 0%, transparent 70%);
+    bottom: -80px; right: -60px;
+    animation: float 10s ease-in-out infinite reverse;
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0) scale(1); }
+    50%      { transform: translateY(-20px) scale(1.05); }
+  }
+  .left-logo     { width: 500px; filter: brightness(0) invert(1); margin-bottom: 32px; position: relative; z-index: 2; animation: fadeDown .6s ease both; height: 500px; }
+  .left-tagline  { color: rgba(255,255,255,.88); font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; text-align: center; line-height: 1.35; position: relative; z-index: 2; animation: fadeDown .7s .1s ease both; }
+  .left-sub      { color: rgba(255,255,255,.5); font-size: 13px; text-align: center; margin-top: 10px; position: relative; z-index: 2; animation: fadeDown .7s .2s ease both; }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .right-panel {
+    width: 500px;
+    background: #fff;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 52px 52px;
+    border-left: 2px solid var(--border);
+    overflow-y: auto;
+    animation: slideIn .5s ease both;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(28px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .form-heading { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: var(--text); margin-bottom: 6px; width: 100%; }
+  .form-sub     { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; width: 100%; line-height: 1.5; }
+
+  .form-row { display: flex; gap: 14px; width: 100%; }
+  .form-row .form-group { flex: 1; }
+  .form-group { width: 100%; margin-bottom: 18px; }
+
+  .form-label { display: block; font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 6px; }
+
+  .input-wrap { position: relative; }
+  .input-wrap .icon-left {
+    position: absolute; left: 13px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted); font-size: 13px;
+    pointer-events: none; transition: color .2s; z-index: 1;
+  }
+  .input-wrap input {
+    width: 100%;
+    padding: 12px 42px 12px 40px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 14px; font-family: 'DM Sans', sans-serif;
+    color: var(--text); background: #faf8ff;
+    outline: none; transition: border .2s, box-shadow .2s, background .2s;
+  }
+  .input-wrap input:focus {
+    border-color: var(--purple); background: #fff;
+    box-shadow: 0 0 0 3px var(--purple-glow);
+  }
+  .input-wrap input:focus ~ .icon-left { color: var(--purple); }
+  .toggle-pw {
+    position: absolute; right: 13px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted); font-size: 13px; cursor: pointer;
+  }
+  .toggle-pw:hover { color: var(--purple); }
+
+  .form-group.has-error .input-wrap input {
+    border-color: var(--error); background: var(--error-bg);
+    box-shadow: 0 0 0 3px rgba(220,38,38,.12);
+  }
+  .form-group.has-error .icon-left { color: var(--error) !important; }
+  .error-msg {
+    display: none; font-size: 11.5px; color: var(--error);
+    margin-top: 5px; padding-left: 2px; font-weight: 500;
+    animation: errIn .2s ease;
+  }
+  .form-group.has-error .error-msg { display: flex; align-items: center; gap: 5px; }
+  .error-msg::before { content: '\26A0'; font-size: 11px; }
+  @keyframes errIn {
+    from { opacity:0; transform: translateY(-4px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+ 
+  .form-group.has-success .input-wrap input {
+    border-color: var(--success); background: var(--success-bg);
+    box-shadow: 0 0 0 3px rgba(5,150,105,.12);
+  }
+
+  .btn-primary {
+    width: 100%; padding: 13px;
+    background: var(--purple); color: #fff;
+    border: none; border-radius: var(--radius);
+    font-size: 15px; font-weight: 700; font-family: 'Syne', sans-serif;
+    cursor: pointer; letter-spacing: .3px;
+    transition: background .2s, transform .15s, box-shadow .2s;
+    box-shadow: 0 4px 16px var(--purple-glow);
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-primary:hover   { background: var(--purple-dark); transform: translateY(-1px); box-shadow: 0 6px 22px var(--purple-glow); }
+  .btn-primary:active  { transform: translateY(0); }
+  .spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: spin .65s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .btn-primary.loading .btn-text { display: none; }
+  .btn-primary.loading .spinner  { display: block; }
+
+  .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--text-muted); font-size: 12px; width: 100%; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .small-link { font-size: 13px; color: var(--text-muted); text-align: center; margin-top: 6px; }
+  .small-link a { color: var(--purple); font-weight: 700; text-decoration: none; }
+  .small-link a:hover { text-decoration: underline; }
+
+  
+  .alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 18px; display: none; align-items: flex-start; gap: 10px; width: 100%; line-height: 1.5; animation: errIn .3s ease; }
+  .alert.show { display: flex; }
+  .alert-error   { background: var(--error-bg);   color: var(--error);   border: 1px solid rgba(220,38,38,.25); }
+  .alert-success { background: var(--success-bg); color: var(--success); border: 1px solid rgba(5,150,105,.25); }
+  .alert i { margin-top: 1px; flex-shrink: 0; }
+
+ 
+  .pw-strength { margin-top: 6px; }
+  .pw-bar      { height: 3px; border-radius: 2px; background: #e5e7eb; overflow: hidden; }
+  .pw-bar-fill { height: 100%; border-radius: 2px; width: 0; transition: width .3s, background .3s; }
+  .pw-label    { font-size: 11px; margin-top: 4px; color: var(--text-muted); font-weight: 600; }
+
+  
+  .back-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); text-decoration: none; margin-bottom: 24px; font-weight: 600; transition: color .2s; width: 100%; }
+  .back-link:hover { color: var(--purple); }
+
+  @media (max-width: 900px) {
+    .left-panel  { display: none; }
+    .right-panel { width: 100%; border-left: none; padding: 36px 24px; }
+    .form-row    { flex-direction: column; gap: 0; }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="left-panel">
+    <img class="left-logo" src="./images/IMG-20260421-WA0116-removebg-preview.png" alt="Identix Logo">
+ <div class="left-tagline">Join the IDentix<br>Admin Network</div>
+  <div class="left-sub">Create your account to get started</div>
+</div>
+
+<div class="right-panel">
+  <div class="form-heading">Admin Registration</div>
+  <div class="form-sub">Fill in the details below to create your admin account.</div>
+
+  <div class="form-row">
+    <div class="form-group" id="fg-name">
+      <label class="form-label">Full Name</label>
+      <div class="input-wrap">
+        <i class="fa-solid fa-circle-user icon-left"></i>
+        <input type="text" id="f-name" placeholder="e.g. John Doe" autocomplete="name">
+      </div>
+      <div class="error-msg" id="err-name"></div>
+    </div>
+    <div class="form-group" id="fg-username">
+      <label class="form-label">Username</label>
+      <div class="input-wrap">
+        <i class="fa-solid fa-at icon-left"></i>
+        <input type="text" id="f-username" placeholder="e.g. johnadmin" autocomplete="username">
+      </div>
+      <div class="error-msg" id="err-username"></div>
+    </div>
+  </div>
+
+  <div class="form-group" id="fg-email">
+    <label class="form-label">Email Address</label>
+    <div class="input-wrap">
+      <i class="fa-solid fa-envelope icon-left"></i>
+      <input type="email" id="f-email" placeholder="Enter your email address" autocomplete="email">
+    </div>
+    <div class="error-msg" id="err-email"></div>
+  </div>
+
+  <div class="form-group" id="fg-password">
+    <label class="form-label">Password</label>
+    <div class="input-wrap">
+      <i class="fa-solid fa-lock icon-left"></i>
+      <input type="password" id="f-password" placeholder="Create a strong password" autocomplete="new-password" oninput="checkStrength(this.value)">
+      <i class="toggle-pw fa-solid fa-eye" onclick="togglePw('f-password', this)"></i>
+    </div>
+    <div class="pw-strength">
+      <div class="pw-bar"><div class="pw-bar-fill" id="pw-bar-fill"></div></div>
+      <div class="pw-label" id="pw-label">Enter a password</div>
+    </div>
+    <div class="error-msg" id="err-password"></div>
+  </div>
+
+  <div class="form-group" id="fg-conpassword">
+    <label class="form-label">Confirm Password</label>
+    <div class="input-wrap">
+      <i class="fa-solid fa-shield-halved icon-left"></i>
+      <input type="password" id="f-conpassword" placeholder="Re-enter your password" autocomplete="new-password">
+      <i class="toggle-pw fa-solid fa-eye" onclick="togglePw('f-conpassword', this)"></i>
+    </div>
+    <div class="error-msg" id="err-conpassword"></div>
+  </div>
+
+  <button class="btn-primary" id="reg-btn" onclick="handleRegister()">
+    <span class="btn-text">Create Account</span>
+    <div class="spinner"></div>
+  </button>
+
+  <div class="small-link" style="margin-top:18px;">Already have an account? <a href="login.html">Sign in here</a></div>
+</div>
+
+<script>
+
+function getUsers()      { return JSON.parse(localStorage.getItem('identix_users') || '{}'); }
+function saveUsers(u)    { localStorage.setItem('identix_users', JSON.stringify(u)); }
+
+function clearError(id) {
+  const fg = document.getElementById('fg-' + id);
+  if (fg) { fg.classList.remove('has-error'); fg.classList.remove('has-success'); }
+}
+function setError(id, msg) {
+  const fg  = document.getElementById('fg-' + id);
+  const err = document.getElementById('err-' + id);
+  if (fg)  { fg.classList.remove('has-success'); fg.classList.add('has-error'); }
+  if (err) err.textContent = msg;
+}
+function setSuccess(id) {
+  const fg = document.getElementById('fg-' + id);
+  if (fg) { fg.classList.remove('has-error'); fg.classList.add('has-success'); }
+}
+function showAlert(id, type, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'alert alert-' + type + ' show';
+  el.querySelector('.alert-msg').textContent = msg;
+}
+function hideAlert(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('show');
+}
+function togglePw(inputId, icon) {
+  const inp = document.getElementById(inputId);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  icon.classList.toggle('fa-eye');
+  icon.classList.toggle('fa-eye-slash');
+}
+
+
+['name','username','email','password','conpassword'].forEach(id => {
+  const el = document.getElementById('f-' + id);
+  if (el) el.addEventListener('input', () => clearError(id));
+});
+
+function checkStrength(val) {
+  const fill  = document.getElementById('pw-bar-fill');
+  const label = document.getElementById('pw-label');
+  if (!fill) return;
+  let score = 0;
+  if (val.length >= 8)          score++;
+  if (/[A-Z]/.test(val))        score++;
+  if (/[0-9]/.test(val))        score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const levels = [
+    { pct:'0%',   color:'#e5e7eb', text:'Enter a password' },
+    { pct:'25%',  color:'#ef4444', text:'Weak' },
+    { pct:'50%',  color:'#f59e0b', text:'Fair' },
+    { pct:'75%',  color:'#3b82f6', text:'Good' },
+    { pct:'100%', color:'#10b981', text:'Strong ✓' },
+  ];
+  const lvl = val.length === 0 ? levels[0] : (levels[score] || levels[1]);
+  fill.style.width      = lvl.pct;
+  fill.style.background = lvl.color;
+  label.textContent     = lvl.text;
+  label.style.color     = lvl.color === '#e5e7eb' ? 'var(--text-muted)' : lvl.color;
+}
+
+async function handleRegister() {
+  let valid = true;
+  const name      = document.getElementById('f-name').value.trim();
+  const username  = document.getElementById('f-username').value.trim();
+  const email     = document.getElementById('f-email').value.trim();
+  const password  = document.getElementById('f-password').value;
+  const confirm   = document.getElementById('f-conpassword').value;
+
+  if (!name || name.length < 2)
+    { setError('name', 'Full name must be at least 2 characters.'); valid = false; }
+  if (!username || username.length < 3)
+    { setError('username', 'Username must be at least 3 characters.'); valid = false; }
+  else if (!/^[a-zA-Z0-9_]+$/.test(username))
+    { setError('username', 'Only letters, numbers, and underscores allowed.'); valid = false; }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    { setError('email', 'Please enter a valid email address.'); valid = false; }
+  if (!password || password.length < 6)
+    { setError('password', 'Password must be at least 6 characters.'); valid = false; }
+  if (!confirm)
+    { setError('conpassword', 'Please confirm your password.'); valid = false; }
+  else if (confirm !== password)
+    { setError('conpassword', 'Passwords do not match — please check and try again.'); valid = false; }
+
+  if (!valid) return;
+
+  const btn = document.getElementById('reg-btn');
+  btn.classList.add('loading');
+
+  const API_BASE = 'https://identix-api-production.up.railway.app';
+  try {
+    const res  = await fetch(API_BASE + '/auth/register', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ name, username, email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      btn.classList.remove('loading');
+      const msg = data.detail || data.message || 'Registration failed.';
+      if (msg.toLowerCase().includes('username')) { setError('username', msg); }
+      else if (msg.toLowerCase().includes('email')) { setError('email', msg); }
+      else { alert(msg); }
+      return;
+    }
+    sessionStorage.setItem('identix_session', data.username);
+    sessionStorage.setItem('identix_name',    data.name);
+    window.location.href = 'dashboard.html';
+  } catch(err) {
+    btn.classList.remove('loading');
+    alert('Could not reach the server. Check your connection.\n\n' + err.message);
+  }
+}
+</script>
+</body>
+</html>

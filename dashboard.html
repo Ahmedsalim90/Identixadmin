@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDentix – Admin Dashboard</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+  :root {
+    --purple:       #8a2be2;
+    --purple-light: #ede9fe;
+    --purple-mid:   #9d4edd;
+    --dark:         #1a1033;
+    --sidebar-bg:   #ffffff;
+    --sidebar-border: #8a2be2;
+    --sidebar-w:    220px;
+    --topbar-h:     60px;
+    --text:         #1a1033;
+    --text-muted:   #6b7280;
+    --border:       #e5e7eb;
+    --bg:           #f4f3ff;
+    --card-bg:      #ffffff;
+    --green:        #10b981;
+    --red:          #ef4444;
+    --amber:        #f59e0b;
+    --blue:         #3b82f6;
+    --radius:       12px;
+    --shadow:       0 1px 3px rgba(0,0,0,.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+  }
+
+  #sidebar {
+    width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    border-right: 2px solid var(--sidebar-border);
+    height: 100vh;
+    position: fixed;
+    top: 0; left: 0;
+    display: flex;
+    flex-direction: column;
+    z-index: 200;
+    transition: transform .3s ease;
+    overflow-y: auto;
+    box-shadow: 2px 0 12px rgba(138,43,226,0.10);
+  }
+
+  .sidebar-logo {
+    padding: 16px 16px;
+    border-bottom: 1.5px solid rgba(138,43,226,0.18);
+    display: flex; align-items: center; justify-content: center;
+    background: #fff;
+  }
+  .sidebar-logo img {
+    width: 140px; height: auto; object-fit: contain; display: block;
+  }
+
+  .sidebar-section {
+    padding: 16px 12px 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+    color: var(--purple); text-transform: uppercase;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; color: #444; font-size: 13px;
+    border-radius: 8px; margin: 2px 8px; cursor: pointer;
+    text-decoration: none; transition: all .2s;
+    position: relative; font-weight: 500;
+  }
+  .nav-item:hover { background: rgba(138,43,226,.08); color: var(--purple); }
+  .nav-item.active { background: var(--purple); color: #fff; }
+  .nav-item i { width: 16px; text-align: center; font-size: 13px; }
+
+  .badge-count {
+    margin-left: auto; background: var(--red); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 2px 6px;
+    border-radius: 20px; min-width: 18px; text-align: center;
+  }
+
+  .sidebar-footer {
+    margin-top: auto; padding: 12px;
+    border-top: 1.5px solid rgba(138,43,226,0.18); background: #fff;
+  }
+  .admin-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px; border-radius: 8px; cursor: pointer;
+  }
+  .admin-row:hover { background: rgba(138,43,226,.07); }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--purple);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .admin-name { color: var(--text); font-size: 12px; font-weight: 700; }
+  .admin-role { color: var(--text-muted); font-size: 10px; }
+
+  .logout-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; color: #888; font-size: 12px;
+    cursor: pointer; border-radius: 8px; margin-top: 4px;
+    font-weight: 600; transition: all .2s;
+  }
+  .logout-btn:hover { background: rgba(255,0,0,.08); color: #f87171; }
+
+  #overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.5); z-index: 199;
+  }
+
+  #main {
+    margin-left: var(--sidebar-w); flex: 1;
+    display: flex; flex-direction: column;
+    min-height: 100vh; transition: margin .3s ease;
+  }
+
+  #topbar {
+    height: var(--topbar-h); background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 24px; gap: 16px;
+    position: sticky; top: 0; z-index: 100;
+  }
+
+  #menu-toggle {
+    display: none; background: none; border: none;
+    font-size: 18px; color: var(--text); cursor: pointer; padding: 4px;
+  }
+
+  .topbar-title { font-size: 17px; font-weight: 700; flex-shrink: 0; }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+
+  .notif-btn {
+    position: relative; background: none; border: none;
+    cursor: pointer; font-size: 16px; color: var(--text-muted); padding: 6px;
+  }
+  .notif-dot {
+    position: absolute; top: 3px; right: 3px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--red); border: 2px solid #fff;
+  }
+  .bell-count {
+    position: absolute; top: 0px; right: 0px;
+    background: var(--red); color: #fff;
+    font-size: 9px; font-weight: 700;
+    min-width: 16px; height: 16px;
+    border-radius: 20px; padding: 0 4px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff;
+    opacity: 0; transform: scale(0.6);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .bell-count.visible {
+    opacity: 1; transform: scale(1);
+  }
+
+  .topbar-user {
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer; padding: 4px 8px; border-radius: 8px;
+  }
+  .topbar-user:hover { background: var(--bg); }
+  .topbar-user .avatar { width: 30px; height: 30px; font-size: 11px; }
+  .topbar-user .uname { font-size: 13px; font-weight: 600; }
+  .topbar-user .urole { font-size: 10px; color: var(--text-muted); }
+
+  #content {
+    padding: 24px; flex: 1;
+    max-width: 1400px; width: 100%;
+  }
+
+  .live-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green); animation: pulse 1.5s infinite; margin-right: 6px;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .5; transform: scale(1.3); }
+  }
+
+  .welcome-bar {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; flex-wrap: wrap;
+    gap: 8px; margin-bottom: 20px;
+  }
+  .welcome-bar h2 { font-size: 20px; font-weight: 700; }
+  .welcome-bar p  { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .date-badge {
+    font-size: 12px; color: var(--text-muted);
+    background: var(--card-bg); border: 1px solid var(--border);
+    padding: 6px 12px; border-radius: 8px;
+    display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px; margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--card-bg); border-radius: var(--radius);
+    padding: 18px 20px; box-shadow: var(--shadow);
+    display: flex; align-items: center; gap: 14px; transition: transform .2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); }
+
+  .stat-icon {
+    width: 46px; height: 46px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .si-purple { background: var(--purple-light); color: var(--purple); }
+  .si-green  { background: #d1fae5; color: var(--green); }
+  .si-blue   { background: #dbeafe; color: var(--blue); }
+  .si-amber  { background: #fef3c7; color: var(--amber); }
+
+  .stat-info { flex: 1; min-width: 0; }
+  .stat-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+  .stat-value { font-size: 26px; font-weight: 700; line-height: 1.2; }
+  .stat-change { font-size: 11px; margin-top: 3px; }
+  .up   { color: var(--green); }
+  .down { color: var(--red); }
+
+  .mid-grid {
+    display: grid; grid-template-columns: 1fr 1.6fr;
+    gap: 16px; margin-bottom: 20px;
+  }
+
+  .card {
+    background: var(--card-bg); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 20px;
+  }
+  .card-header {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 16px;
+  }
+  .card-title { font-size: 14px; font-weight: 700; }
+
+  .period-select {
+    font-size: 12px; border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 8px;
+    background: var(--bg); color: var(--text);
+    cursor: pointer; outline: none;
+  }
+
+  .donut-wrap { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .donut-canvas { width: 150px !important; height: 150px !important; flex-shrink: 0; }
+  .donut-legend { flex: 1; min-width: 140px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-bottom: 8px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-label { flex: 1; color: var(--text-muted); }
+  .legend-val { font-weight: 600; }
+
+  .line-canvas { width: 100% !important; height: 200px !important; }
+
+  .bot-grid {
+    display: grid; grid-template-columns: 2fr 1fr;
+    gap: 16px; margin-bottom: 20px;
+  }
+
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th {
+    text-align: left; padding: 8px 10px;
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .5px;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td {
+    padding: 10px 10px; border-bottom: 1px solid var(--border); vertical-align: middle;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--bg); }
+  .table-wrap { overflow-x: auto; }
+
+  .stud-row { display: flex; align-items: center; gap: 8px; }
+  .stud-av {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--purple-light); color: var(--purple);
+    font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  .pill { padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+  .pill-green  { background: #d1fae5; color: #065f46; }
+  .pill-purple { background: var(--purple-light); color: var(--purple); }
+  .pill-amber  { background: #fef3c7; color: #92400e; }
+  .pill-blue   { background: #dbeafe; color: #1e40af; }
+  .pill-red    { background: #fee2e2; color: #991b1b; }
+
+  .dot-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); font-size: 14px; padding: 2px 6px; border-radius: 4px;
+  }
+  .dot-btn:hover { background: var(--bg); color: var(--text); }
+
+  .qa-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+    cursor: pointer; margin-bottom: 8px; transition: all .2s;
+    text-decoration: none; color: inherit;
+  }
+  .qa-item:hover { border-color: var(--purple); background: var(--purple-light); }
+  .qa-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--purple-light); color: var(--purple);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .qa-title { font-size: 13px; font-weight: 600; }
+  .qa-sub   { font-size: 11px; color: var(--text-muted); }
+  .qa-arrow { margin-left: auto; color: var(--text-muted); font-size: 11px; }
+
+  .activity-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .activity-item:last-child { border-bottom: none; }
+  .act-icon {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; flex-shrink: 0;
+  }
+  .act-body { flex: 1; min-width: 0; }
+  .act-title { font-size: 12px; font-weight: 600; line-height: 1.4; }
+  .act-sub   { font-size: 11px; color: var(--text-muted); }
+  .act-time  { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+
+  .footer-stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px; margin-bottom: 16px;
+  }
+
+  .fs-card {
+    background: var(--card-bg); border-radius: var(--radius);
+    padding: 14px 16px; box-shadow: var(--shadow);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .fs-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+  }
+  .fs-num   { font-size: 20px; font-weight: 700; line-height: 1; }
+  .fs-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #d1fae5; color: #065f46;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+  .empty-state i { font-size: 40px; margin-bottom: 12px; opacity: .3; display: block; }
+  .empty-state p { font-size: 13px; }
+
+  .view-all { font-size: 12px; color: var(--purple); font-weight: 600; text-decoration: none; }
+  .view-all:hover { text-decoration: underline; }
+
+  .section-title { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--text); }
+
+  .theme-btn {
+    background: none; border: 1px solid var(--border); color: var(--text-muted);
+    padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; gap: 6px; transition: all .2s; white-space: nowrap;
+  }
+  .theme-btn:hover { border-color: var(--purple); color: var(--purple); }
+
+  .theme-dropdown-wrap { position: relative; }
+  .theme-dropdown {
+    display: none; position: absolute; top: calc(100% + 8px); right: 0;
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.15);
+    padding: 6px; min-width: 160px; z-index: 500;
+  }
+  .theme-dropdown.open { display: block; }
+  .theme-option {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 7px; cursor: pointer;
+    font-size: 13px; font-weight: 500; color: var(--text); transition: background .15s;
+  }
+  .theme-option:hover { background: var(--purple-light); color: var(--purple); }
+  .theme-option.active { background: var(--purple-light); color: var(--purple); font-weight: 700; }
+  .theme-swatch { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; border: 1.5px solid rgba(0,0,0,.1); }
+
+  @media (max-width: 1024px) { .bot-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 768px) {
+    :root { --sidebar-w: 220px; }
+    #sidebar { transform: translateX(-100%); }
+    #sidebar.open { transform: translateX(0); }
+    #overlay.show { display: block; }
+    #main { margin-left: 0; }
+    #menu-toggle { display: block; }
+    .mid-grid { grid-template-columns: 1fr; }
+    .topbar-user .uname, .topbar-user .urole { display: none; }
+    #content { padding: 16px; }
+    .stat-value { font-size: 22px; }
+  }
+  @media (max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .welcome-bar h2 { font-size: 16px; }
+    .donut-wrap { flex-direction: column; align-items: flex-start; }
+  }
+
+  body.theme-dark {
+    --bg: #0f0f1a; --card-bg: #1a1a2e; --text: #e8e8f0; --text-muted: #9090b0;
+    --border: #2a2a45; --shadow: 0 1px 3px rgba(0,0,0,.4);
+    --purple-light: rgba(138,43,226,0.18); --sidebar-bg: #12122a; --sidebar-border: #8a2be2;
+  }
+  body.theme-dark #topbar { background: #1a1a2e; border-color: #2a2a45; }
+  body.theme-dark .stat-card, body.theme-dark .card, body.theme-dark .fs-card { background: #1a1a2e; }
+  body.theme-dark .nav-item { color: #aaaacc; }
+  body.theme-dark .nav-item:hover { background: rgba(138,43,226,0.15); color: #c8b8ff; }
+  body.theme-dark .admin-name { color: #e8e8f0; }
+  body.theme-dark .logout-btn { color: #9090b0; }
+  body.theme-dark .date-badge { background: #1a1a2e; border-color: #2a2a45; }
+  body.theme-dark .period-select { background: #12122a; border-color: #2a2a45; color: #e8e8f0; }
+  body.theme-dark .data-table tr:hover td { background: #12122a; }
+  body.theme-dark .qa-item { border-color: #2a2a45; }
+  body.theme-dark .qa-item:hover { background: rgba(138,43,226,0.15); }
+
+  body.theme-purple {
+    --bg: #1e0a3c; --card-bg: #2d1254; --text: #f0e8ff; --text-muted: #b89fd4;
+    --border: #4a2080; --shadow: 0 1px 4px rgba(0,0,0,.35);
+    --purple-light: rgba(180,120,255,0.2); --sidebar-bg: #1a082e; --sidebar-border: #c084fc;
+  }
+  body.theme-purple #topbar { background: #2d1254; border-color: #4a2080; }
+  body.theme-purple .stat-card, body.theme-purple .card, body.theme-purple .fs-card { background: #2d1254; }
+  body.theme-purple .nav-item { color: #c8aef0; }
+  body.theme-purple .nav-item:hover { background: rgba(192,132,252,0.15); color: #f0e8ff; }
+  body.theme-purple .admin-name { color: #f0e8ff; }
+  body.theme-purple .logout-btn { color: #b89fd4; }
+  body.theme-purple .date-badge { background: #2d1254; border-color: #4a2080; }
+  body.theme-purple .period-select { background: #1a082e; border-color: #4a2080; color: #f0e8ff; }
+  body.theme-purple .data-table tr:hover td { background: #1a082e; }
+  body.theme-purple .qa-item { border-color: #4a2080; }
+</style>
+</head>
+<body>
+
+<div id="overlay" onclick="closeSidebar()"></div>
+
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <img src="./images/IMG-20260421-WA0116-removebg-preview.png" alt="IDentix Logo">
+  </div>
+  <div class="sidebar-section">Management</div>
+  <a href="dashboard.html" class="nav-item active"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+  <a href="students.html" class="nav-item"><i class="fa-solid fa-users"></i> Students</a>
+  <a href="idcards.html" class="nav-item"><i class="fa-solid fa-id-card"></i> ID Cards</a>
+  <a href="enrollments.html" class="nav-item"><i class="fa-solid fa-user-plus"></i> Enrollments</a>
+  <a href="generate.html" class="nav-item"><i class="fa-solid fa-fingerprint"></i> Generate IDs</a>
+  <a href="requests.html" class="nav-item">
+    <i class="fa-solid fa-inbox"></i> Requests
+    <span class="badge-count" id="sidebar-requests"></span>
+  </a>
+  <div class="sidebar-footer">
+    <div class="admin-row">
+      <div class="avatar" id="sidebar-avatar">?</div>
+      <div>
+        <div class="admin-name" id="sidebar-username">Loading...</div>
+        <div class="admin-role">Super Admin</div>
+      </div>
+    </div>
+    <div class="logout-btn" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</div>
+  </div>
+</aside>
+
+<div id="main">
+  <header id="topbar">
+    <button id="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+    <div class="topbar-title">Dashboard</div>
+    <div class="topbar-right">
+      <div class="theme-dropdown-wrap">
+        <button class="theme-btn" onclick="toggleThemeDropdown()">
+          <span id="theme-icon">☀️</span> Theme
+        </button>
+        <div class="theme-dropdown" id="theme-dropdown"></div>
+      </div>
+      <a href="requests.html" style="text-decoration:none;">
+        <button class="notif-btn" id="notifications" title="View requests">
+          <i class="fa-solid fa-bell"></i>
+          <span class="bell-count" id="bell-count"></span>
+        </button>
+      </a>
+      <div class="topbar-user">
+        <div class="avatar" id="topbar-avatar">?</div>
+        <div>
+          <div class="uname" id="topbar-username">Loading...</div>
+          <div class="urole">Super Admin</div>
+        </div>
+        <i class="fa-solid fa-chevron-down" style="font-size:10px;color:var(--text-muted);margin-left:4px;"></i>
+      </div>
+    </div>
+  </header>
+
+  <div id="content">
+
+    <div id="api-error-banner" style="display:none;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:12px;color:#9a3412;line-height:1.7;">
+      <strong style="display:block;margin-bottom:3px;">⚠️ Could not reach the API</strong>
+      Dashboard data may be outdated. Check your connection or
+      <a href="#" onclick="refresh();this.closest('#api-error-banner').style.display='none';return false;" style="color:#9a3412;font-weight:700;">retry</a>.
+      <span id="api-error-detail" style="color:#b45309;font-size:11px;margin-left:4px;"></span>
+    </div>
+
+    <div class="welcome-bar">
+      <div>
+        <h2 id="welcome-heading">Welcome back! 👋</h2>
+        <p><span class="live-dot"></span>Live data · Here's what's happening with IDentix today</p>
+      </div>
+      <div class="date-badge">
+        <i class="fa-regular fa-calendar"></i>
+        <span id="today-date"></span>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon si-purple"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Total Students</div>
+          <div class="stat-value" id="s-total">—</div>
+          <div class="stat-change up" id="s-total-ch"></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-green"><i class="fa-solid fa-user-check"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Enrolled Students</div>
+          <div class="stat-value" id="s-enrolled">—</div>
+          <div class="stat-change up" id="s-enrolled-ch"></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-blue"><i class="fa-solid fa-id-card"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">ID Cards Generated</div>
+          <div class="stat-value" id="s-ids">—</div>
+          <div class="stat-change up" id="s-ids-ch"></div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon si-amber"><i class="fa-solid fa-clock"></i></div>
+        <div class="stat-info">
+          <div class="stat-label">Pending Requests</div>
+          <div class="stat-value" id="s-pending">—</div>
+          <div class="stat-change down" id="s-pending-ch"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mid-grid">
+      <div class="card">
+        <div class="card-header"><div class="card-title">ID Card Status Overview</div></div>
+        <div class="donut-wrap">
+          <canvas id="donutChart" class="donut-canvas"></canvas>
+          <div class="donut-legend">
+            <div class="legend-item">
+              <span class="legend-dot" style="background:#8a2be2;"></span>
+              <span class="legend-label">ID Generated</span>
+              <span class="legend-val" id="leg-generated">—</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background:#f59e0b;"></span>
+              <span class="legend-label">Pending</span>
+              <span class="legend-val" id="leg-pending">—</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background:#3b82f6;"></span>
+              <span class="legend-label">In Progress</span>
+              <span class="legend-val" id="leg-progress">—</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot" style="background:#e5e7eb;"></span>
+              <span class="legend-label">Not Enrolled</span>
+              <span class="legend-val" id="leg-not">—</span>
+            </div>
+            <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px;">
+              <div class="legend-item" style="margin-bottom:0;">
+                <span class="legend-label" style="font-weight:600;">Total Students</span>
+                <span class="legend-val" id="leg-total">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Enrollments Overview</div>
+          <select class="period-select" id="period-select" onchange="changePeriod(this.value)">
+            <option value="week">This Week</option>
+            <option value="month" selected>This Month</option>
+            <option value="year">This Year</option>
+          </select>
+        </div>
+        <canvas id="lineChart" class="line-canvas"></canvas>
+      </div>
+    </div>
+
+    <div class="bot-grid">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Recent Enrollments</div>
+          <a href="students.html" class="view-all">View all</a>
+        </div>
+        <div id="enrollments-container">
+          <div class="empty-state">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <p>Loading enrollments...</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card">
+          <div class="section-title">Quick Actions</div>
+          <a href="generate.html" class="qa-item">
+            <div class="qa-icon"><i class="fa-solid fa-id-card"></i></div>
+            <div><div class="qa-title">Generate ID Cards</div><div class="qa-sub">Generate ID cards in bulk</div></div>
+            <i class="fa-solid fa-chevron-right qa-arrow"></i>
+          </a>
+          <a href="enrollments.html" class="qa-item">
+            <div class="qa-icon"><i class="fa-solid fa-qrcode"></i></div>
+            <div><div class="qa-title">Scan &amp; Enroll</div><div class="qa-sub">Scan student and enroll</div></div>
+            <i class="fa-solid fa-chevron-right qa-arrow"></i>
+          </a>
+          <a href="idcards.html" class="qa-item">
+            <div class="qa-icon"><i class="fa-solid fa-layer-group"></i></div>
+            <div><div class="qa-title">ID Card Templates</div><div class="qa-sub">Manage ID card templates</div></div>
+            <i class="fa-solid fa-chevron-right qa-arrow"></i>
+          </a>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="section-title" style="margin-bottom:0;">Recent Activity</div>
+            <a href="#" class="view-all">View all</a>
+          </div>
+          <div id="activity-feed">
+            <div style="text-align:center;color:var(--text-muted);font-size:12px;padding:16px;">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-stats">
+      <div class="fs-card">
+        <div class="fs-icon si-amber"><i class="fa-solid fa-id-card-clip"></i></div>
+        <div>
+          <div class="fs-num" id="fs-expiring">—</div>
+          <div class="fs-label">ID Cards Expiring Soon<br><span style="font-size:9px;">In next 30 days</span></div>
+        </div>
+      </div>
+      <div class="fs-card">
+        <div class="fs-icon" style="background:#fee2e2;color:var(--red);"><i class="fa-solid fa-id-card"></i></div>
+        <div>
+          <div class="fs-num" id="fs-expired">—</div>
+          <div class="fs-label">ID Cards Expired<br><span style="font-size:9px;">Require renewal</span></div>
+        </div>
+      </div>
+      <div class="fs-card">
+        <div class="fs-icon si-blue"><i class="fa-solid fa-file-alt"></i></div>
+        <div>
+          <div class="fs-num" id="fs-templates">—</div>
+          <div class="fs-label">Templates<br><span style="font-size:9px;">Active templates</span></div>
+        </div>
+      </div>
+      <div class="fs-card">
+        <div class="fs-icon si-green"><i class="fa-solid fa-school"></i></div>
+        <div>
+          <div class="fs-num" id="fs-schools">—</div>
+          <div class="fs-label">Total Schools<br><span style="font-size:9px;">Under your management</span></div>
+        </div>
+      </div>
+      <div class="fs-card">
+        <div class="fs-icon si-green"><i class="fa-solid fa-circle-check"></i></div>
+        <div>
+          <div><span class="status-badge"><span class="live-dot" style="width:6px;height:6px;"></span> All Systems Operational</span></div>
+          <div class="fs-label" style="margin-top:6px;">System Status</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+
+(function checkSession() {
+  const username = sessionStorage.getItem('identix_session');
+  const name     = sessionStorage.getItem('identix_name') || username;
+  if (!username) { window.location.href = 'login.html'; return; }
+  const initials = username.slice(0,2).toUpperCase();
+  ['sidebar-username','topbar-username'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = name || username;
+  });
+  ['sidebar-avatar','topbar-avatar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = initials;
+  });
+  const wh = document.getElementById('welcome-heading');
+  if (wh) wh.textContent = 'Welcome back, ' + (name || username) + '! 👋';
+})();
+
+function handleLogout() {
+  sessionStorage.removeItem('identix_session');
+  sessionStorage.removeItem('identix_name');
+  window.location.href = 'login.html';
+}
+
+document.getElementById("today-date").textContent =
+  new Date().toLocaleDateString("en-GB", { day:"numeric", month:"long", year:"numeric" });
+
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("overlay").classList.toggle("show");
+}
+function closeSidebar() {
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("overlay").classList.remove("show");
+}
+
+let donutChart = null;
+let lineChart  = null;
+const BASE_URL = "https://identix-api-production.up.railway.app";
+let _cachedStudents = [];
+let currentPeriod   = "month";
+
+async function apiGet(path) {
+  const res = await fetch(BASE_URL + path, { headers: { "Content-Type": "application/json" } });
+  if (!res.ok) throw new Error(`HTTP ${res.status} from ${BASE_URL}${path}`);
+  return res.json();
+}
+
+
+function normaliseArray(data) {
+  if (!data) return [];
+  if (Array.isArray(data))             return data;
+  if (Array.isArray(data.data))        return data.data;
+  if (Array.isArray(data.students))    return data.students;
+  if (Array.isArray(data.enrollments)) return data.enrollments;
+  if (Array.isArray(data.requests))    return data.requests;
+  if (Array.isArray(data.results))     return data.results;
+  if (Array.isArray(data.users))       return data.users;
+  if (Array.isArray(data.items))       return data.items;
+  if (typeof data === "object" && data !== null) return [data];
+  return [];
+}
+
+function normaliseStatus(raw) {
+  const s = String(raw || "").toLowerCase().trim();
+  if (["generated","done","completed","issued","active","approved"].includes(s)) return "generated";
+  if (["cancelled","canceled","rejected","inactive","revoked"].includes(s))      return "cancelled";
+  if (["in_progress","processing","inprogress"].includes(s))                      return "in_progress";
+  return "pending";
+}
+
+function pick(obj, keys) {
+  for (const k of keys) if (obj[k] !== undefined && obj[k] !== null) return obj[k];
+  return null;
+}
+
+
+function buildGraphFromStudents(students, period) {
+  const now = new Date();
+  let labels = [], counts = {};
+
+  
+  function parseDate(raw) {
+    if (!raw) return null;
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  if (period === "week") {
+    
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now); d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0,10);
+      labels.push(d.toLocaleDateString("en-GB",{weekday:"short"}));
+      counts[key] = 0;
+    }
+    students.forEach(s => {
+      const d = parseDate(s.date); if (!d) return;
+      const key = d.toISOString().slice(0,10);
+      if (counts[key] !== undefined) counts[key]++;
+    });
+
+  } else if (period === "month") {
+   
+    const dates = students.map(s => parseDate(s.date)).filter(Boolean);
+    if (dates.length === 0) {
+      
+      const year = now.getFullYear(), month = now.getMonth();
+      const days = new Date(year, month+1, 0).getDate();
+      for (let d = 1; d <= days; d++) {
+        const key = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        labels.push(d + ""); counts[key] = 0;
+      }
+    } else {
+      
+      const latestDate = new Date(Math.max(...dates.map(d => d.getTime())));
+      const year  = latestDate.getFullYear();
+      const month = latestDate.getMonth();
+      const days  = new Date(year, month+1, 0).getDate();
+      for (let d = 1; d <= days; d++) {
+        const key = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        labels.push(d + ""); counts[key] = 0;
+      }
+      students.forEach(s => {
+        const d = parseDate(s.date); if (!d) return;
+        const key = d.toISOString().slice(0,10);
+        if (counts[key] !== undefined) counts[key]++;
+      });
+    }
+
+  } else {
+    const dates = students.map(s => parseDate(s.date)).filter(Boolean);
+    const targetYear = dates.length
+      ? (() => {
+          const freq = {};
+          dates.forEach(d => { const y = d.getFullYear(); freq[y] = (freq[y]||0)+1; });
+          return +Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
+        })()
+      : now.getFullYear();
+
+    ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].forEach((m,i) => {
+      labels.push(m); counts[i] = 0;
+    });
+    students.forEach(s => {
+      const d = parseDate(s.date); if (!d) return;
+      if (d.getFullYear() === targetYear) counts[d.getMonth()]++;
+    });
+  }
+  return { labels, data: Object.values(counts) };
+}
+
+function buildGraphData(period) {
+  return buildGraphFromStudents(_cachedStudents, period);
+}
+
+function renderEnrollments(enrollments) {
+  const container = document.getElementById("enrollments-container");
+  if (!enrollments || enrollments.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <i class="fa-solid fa-inbox"></i>
+        <p>No enrollments found.</p>
+        <p style="font-size:11px;margin-top:6px;">Students will appear here once they are registered via the API.</p>
+      </div>`;
+    return;
+  }
+  container.innerHTML = `
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th><th>Student Name</th><th>Student ID</th>
+            <th>Dept / Specialty</th><th>Status</th><th>ID Card</th><th>Date</th><th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${enrollments.map((r, idx) => `
+            <tr>
+              <td style="color:var(--text-muted);font-size:11px;">${idx + 1}</td>
+              <td><div class="stud-row">
+                <div class="stud-av">${initials(r.name)}</div>
+                <span style="font-weight:600;font-size:12px;">${r.name}</span>
+              </div></td>
+              <td style="font-size:11px;color:var(--text-muted);">${r.sid || "—"}</td>
+              <td style="font-size:12px;">${r.dept}</td>
+              <td><span class="pill pill-green">${r.enrolled}</span></td>
+              <td><span class="pill ${idPillClass(r.idStatus)}">${r.idStatus}</span></td>
+              <td style="font-size:11px;color:var(--text-muted);white-space:nowrap;">${r.date}</td>
+              <td><button class="dot-btn">···</button></td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function fetchDashboardData() {
+  const [students, requests, stats, activity] = await Promise.all([
+    apiGet("/students").catch(() => null),
+    (async () => {
+      for (const p of ["/requests","/api/requests","/enrollments/requests","/api/v1/requests"]) {
+        try { const r = await apiGet(p); if (r) return r; } catch(_) {}
+      }
+      return null;
+    })(),
+    apiGet("/stats").catch(() => apiGet("/api/stats").catch(() => null)),
+    apiGet("/activity").catch(() => apiGet("/api/activity").catch(() => null)),
+  ]);
+
+  const rawStudents = normaliseArray(students);
+  _cachedStudents = rawStudents.map(s => ({
+    id:     s.id    || s._id       || s.studentId  || s.student_id  || "",
+    name:   s.name  || s.fullName  || s.full_name
+            || ((s.firstName||s.first_name||"") + " " + (s.lastName||s.last_name||"")).trim()
+            || s.username || "Unknown",
+    sid:    String(s.studentId || s.student_id || s.matricule || s.matriculation
+                   || s.regNumber || s.reg_number || s.id || s._id || ""),
+    dept:   s.department || s.dept  || s.faculty   || s.program
+            || s.specialty || s.field || "—",
+    status: normaliseStatus(
+              s.idStatus || s.id_status || s.status || s.cardStatus || s.card_status || "pending"
+            ),
+    
+    date: (function() {
+      const raw = s.registrationDate || s.registration_date
+                || s.registered_at   || s.registeredAt
+                || s.createdAt       || s.created_at
+                || s.enrolledAt      || s.enrolled_at
+                || s.joinedAt        || s.joined_at
+                || s.enrollment_date || s.enrollmentDate
+                || s.created         || s.timestamp
+                || s.date            || null;
+      if (!raw) return null;
+      const d = new Date(raw);
+      return isNaN(d.getTime()) ? null : d.toISOString();
+    })(),
+    email:  s.email || "",
+  }));
+
+  const rawRequests = normaliseArray(requests);
+  const total    = _cachedStudents.length;
+  const enrolled = _cachedStudents.filter(s => !["cancelled"].includes(s.status)).length;
+  const ids      = _cachedStudents.filter(s => s.status === "generated").length;
+ 
+  const pendingFromStudents = _cachedStudents.filter(s => s.status === "pending").length;
+  const pendingRequests = rawRequests.filter(r => {
+    const st = String(r.status || r.requestStatus || r.state || "pending").toLowerCase();
+    return !["approved","completed","done","rejected","cancelled","generated","issued"].includes(st);
+  }).length;
+ 
+  const pending = (rawRequests.length > 0) ? pendingRequests : pendingFromStudents;
+
+  const sv = stats ? {
+    total:    pick(stats, ["totalStudents","total_students","total","count"])          ?? total,
+    enrolled: pick(stats, ["enrolledStudents","enrolled_students","enrolled"])         ?? enrolled,
+    ids:      pick(stats, ["generatedIds","generated_ids","idsGenerated","generated"]) ?? ids,
+    pending:  pick(stats, ["pendingRequests","pending_requests","pending"])             ?? pending,
+    expiring: pick(stats, ["expiringIds","expiring_ids","expiring"])                   ?? 0,
+    expired:  pick(stats, ["expiredIds","expired_ids","expired"])                      ?? 0,
+    templates:pick(stats, ["templates","templateCount"])                               ?? 0,
+    schools:  pick(stats, ["schools","schoolCount","totalSchools"])                    ?? 0,
+  } : { total, enrolled, ids, pending, expiring:0, expired:0, templates:0, schools:0 };
+
+  const notEnroll  = Math.max(0, sv.total - sv.enrolled);
+  const inProgress = _cachedStudents.filter(s => ["in_progress","processing"].includes(s.status)).length;
+
+ 
+  const recentEnrollments = [..._cachedStudents]
+    .sort((a, b) => {
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return new Date(b.date) - new Date(a.date);
+    })
+    .slice(0, 8)
+    .map(s => ({
+      id:       s.id,
+      name:     s.name,
+      sid:      s.sid,
+      dept:     s.dept,
+      enrolled: "Enrolled",
+      idStatus: s.status === "generated"    ? "ID Generated"
+               : s.status === "in_progress" ? "In Progress"
+               : s.status === "cancelled"   ? "Cancelled"
+               : "Pending",
+      date: s.date
+        ? new Date(s.date).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" })
+        : "N/A",
+    }));
+
+ 
+  const ICON_MAP = {
+    enrollment:["fa-user-plus","#dbeafe","#1e40af"],
+    generated: ["fa-id-card",  "#d1fae5","#065f46"],
+    request:   ["fa-inbox",    "#fef3c7","#92400e"],
+    update:    ["fa-pen",      "#ede9fe","#8a2be2"],
+    default:   ["fa-bell",     "#f3f4f6","#374151"],
+  };
+
+  let activityItems = [];
+  if (activity && normaliseArray(activity).length) {
+    activityItems = normaliseArray(activity).slice(0,6).map(a => {
+      const type   = (a.type||a.action||"default").toLowerCase();
+      const mapKey = Object.keys(ICON_MAP).find(k => type.includes(k)) || "default";
+      const [icon,color,ic] = ICON_MAP[mapKey];
+      return {
+        icon, color, ic,
+        title: a.title || a.message || a.description || type,
+        sub:   a.sub   || a.detail  || a.studentName || "",
+        time:  (a.time || a.createdAt)
+               ? new Date(a.time||a.createdAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})
+               : "—",
+      };
+    });
+  } else {
+    activityItems = [..._cachedStudents]
+      .filter(s => s.date)
+      .sort((a,b) => new Date(b.date) - new Date(a.date))
+      .slice(0,4)
+      .map(s => {
+        const [icon,color,ic] = s.status === "generated" ? ICON_MAP.generated : ICON_MAP.enrollment;
+        return {
+          icon, color, ic,
+          title: s.status === "generated" ? "ID card generated" : "New student enrolled",
+          sub:   s.name + (s.dept !== "—" ? " · " + s.dept : ""),
+          time:  new Date(s.date).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}),
+        };
+      });
+    if (sv.pending > 0) {
+      activityItems.push({
+        icon:"fa-inbox", color:"#fef3c7", ic:"#92400e",
+        title: "ID card requests pending",
+        sub:   `${sv.pending} request${sv.pending>1?"s":""} waiting for review`,
+        time:  "Now",
+      });
+    }
+  }
+
+  return {
+    stats: {
+      total:    { value: sv.total,    change: "" },
+      enrolled: { value: sv.enrolled, change: "" },
+      ids:      { value: sv.ids,      change: "" },
+      pending:  { value: sv.pending,  change: "" },
+    },
+    donut: { generated: sv.ids, pending: sv.pending, inProgress, notEnroll, total: sv.total || 1 },
+    enrollmentGraph: buildGraphFromStudents(_cachedStudents, currentPeriod),
+    recentEnrollments,
+    activity: activityItems,
+    footer: { expiring: sv.expiring, expired: sv.expired, templates: sv.templates, schools: sv.schools },
+  };
+}
+
+
+function updateUI(d) {
+  el("s-total").textContent    = d.stats.total.value.toLocaleString();
+  el("s-enrolled").textContent = d.stats.enrolled.value.toLocaleString();
+  el("s-ids").textContent      = d.stats.ids.value.toLocaleString();
+  el("s-pending").textContent  = d.stats.pending.value.toLocaleString();
+
+  [["s-total-ch",d.stats.total.change,"up"],["s-enrolled-ch",d.stats.enrolled.change,"up"],
+   ["s-ids-ch",d.stats.ids.change,"up"],["s-pending-ch",d.stats.pending.change,"down"]].forEach(([id,val,dir]) => {
+    const cel = el(id); if (!cel) return;
+    val ? (cel.textContent = (dir==="up"?"▲ ":"▼ ")+val, cel.style.display="") : (cel.style.display="none");
+  });
+
+  const dn = d.donut;
+  el("leg-generated").textContent = dn.generated + ` (${pct(dn.generated,dn.total)}%)`;
+  el("leg-pending").textContent   = dn.pending   + ` (${pct(dn.pending,dn.total)}%)`;
+  el("leg-progress").textContent  = dn.inProgress+ ` (${pct(dn.inProgress,dn.total)}%)`;
+  el("leg-not").textContent       = dn.notEnroll + ` (${pct(dn.notEnroll,dn.total)}%)`;
+  el("leg-total").textContent     = dn.total.toLocaleString();
+
+  const donutData = [dn.generated, dn.pending, dn.inProgress, dn.notEnroll];
+  if (!donutChart) {
+    donutChart = new Chart(document.getElementById("donutChart"), {
+      type:"doughnut",
+      data:{ labels:["ID Generated","Pending","In Progress","Not Enrolled"],
+             datasets:[{ data:donutData, backgroundColor:["#8a2be2","#f59e0b","#3b82f6","#e5e7eb"], borderWidth:0, hoverOffset:4 }] },
+      options:{ cutout:"70%", plugins:{ legend:{ display:false } }, animation:{ duration:600 } }
+    });
+  } else {
+    donutChart.data.datasets[0].data = donutData;
+    donutChart.update("none");
+  }
+
+  const g = d.enrollmentGraph;
+  if (!lineChart) {
+    lineChart = new Chart(document.getElementById("lineChart"), {
+      type:"line",
+      data:{ labels:g.labels, datasets:[{
+        label:"Enrollments", data:g.data,
+        borderColor:"#8a2be2", backgroundColor:"rgba(138,43,226,.08)",
+        borderWidth:2, pointRadius:3, pointBackgroundColor:"#8a2be2", fill:true, tension:0.4
+      }] },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:false } },
+        scales:{
+          x:{ grid:{ display:false }, ticks:{ font:{ size:10 }, maxTicksLimit:8 } },
+          y:{ grid:{ color:"rgba(0,0,0,.05)" }, ticks:{ font:{ size:10 } } }
+        },
+        animation:{ duration:600 }
+      }
+    });
+  } else {
+    lineChart.data.labels           = g.labels;
+    lineChart.data.datasets[0].data = g.data;
+    lineChart.update("none");
+  }
+
+  renderEnrollments(d.recentEnrollments);
+
+  el("activity-feed").innerHTML = d.activity.length
+    ? d.activity.map(a => `
+        <div class="activity-item">
+          <div class="act-icon" style="background:${a.color};color:${a.ic};">
+            <i class="fa-solid ${a.icon}" style="font-size:12px;"></i>
+          </div>
+          <div class="act-body">
+            <div class="act-title">${a.title}</div>
+            <div class="act-sub">${a.sub}</div>
+          </div>
+          <div class="act-time">${a.time}</div>
+        </div>`).join("")
+    : `<div style="text-align:center;color:var(--text-muted);font-size:12px;padding:16px;">No recent activity.</div>`;
+
+  el("sidebar-requests").textContent = d.stats.pending.value || "";
+
+ 
+  const bellCount = el("bell-count");
+  const pendingCount = parseInt(d.stats.pending.value) || 0;
+  if (bellCount) {
+    bellCount.textContent = pendingCount > 99 ? "99+" : (pendingCount || "");
+    if (pendingCount > 0) { bellCount.classList.add("visible"); }
+    else { bellCount.classList.remove("visible"); }
+  }
+  el("fs-expiring").textContent  = d.footer.expiring;
+  el("fs-expired").textContent   = d.footer.expired;
+  el("fs-templates").textContent = d.footer.templates;
+  el("fs-schools").textContent   = d.footer.schools;
+}
+
+function changePeriod(p) {
+  currentPeriod = p;
+  const g = buildGraphData(p);
+  if (lineChart) { lineChart.data.labels = g.labels; lineChart.data.datasets[0].data = g.data; lineChart.update(); }
+}
+
+function el(id)       { return document.getElementById(id); }
+function pct(v, t)    { return t ? Math.round(v/t*100) : 0; }
+function initials(n)  { return (n||"?").split(" ").map(w=>w[0]).filter(Boolean).slice(0,2).join("").toUpperCase(); }
+function idPillClass(s) {
+  if (s === "ID Generated") return "pill-purple";
+  if (s === "In Progress")  return "pill-blue";
+  if (s === "Cancelled")    return "pill-red";
+  return "pill-amber";
+}
+
+
+async function refresh() {
+  try {
+    const data = await fetchDashboardData();
+    updateUI(data);
+    const banner = document.getElementById("api-error-banner");
+    if (banner) banner.style.display = "none";
+  } catch(e) {
+    console.error("Dashboard refresh error:", e);
+    const banner = document.getElementById("api-error-banner");
+    const detail = document.getElementById("api-error-detail");
+    if (banner) banner.style.display = "block";
+    if (detail) detail.textContent   = "(" + e.message + ")";
+  }
+}
+
+
+try {
+  const ws = new WebSocket("wss://identix-api-production.up.railway.app/ws/enrollments");
+  ws.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      if (msg.recentEnrollments) renderEnrollments(msg.recentEnrollments);
+      if (Notification.permission === "granted" && msg.name) {
+        new Notification("New Enrollment", { body: msg.name + " just enrolled!" });
+      }
+    } catch(e) { console.error("WS parse error:", e); }
+  };
+  ws.onerror = (e) => console.warn("WebSocket unavailable:", e);
+} catch(e) { console.warn("WebSocket init failed:", e); }
+
+
+const THEMES = [
+  { id:"light",  label:"Light",       swatch:"#f4f3ff", icon:"☀️" },
+  { id:"dark",   label:"Dark",        swatch:"#0f0f1a", icon:"🌙" },
+  { id:"purple", label:"Deep Purple", swatch:"#1e0a3c", icon:"💜" },
+];
+let currentTheme = localStorage.getItem("identix_theme") || "light";
+
+function applyTheme(id) {
+  document.body.classList.remove("theme-dark","theme-purple");
+  if (id !== "light") document.body.classList.add("theme-" + id);
+  currentTheme = id;
+  localStorage.setItem("identix_theme", id);
+  document.querySelectorAll(".theme-option").forEach(el => el.classList.toggle("active", el.dataset.theme === id));
+  const t = THEMES.find(t => t.id === id);
+  if (t) document.getElementById("theme-icon").textContent = t.icon;
+}
+
+function toggleThemeDropdown() {
+  document.getElementById("theme-dropdown").classList.toggle("open");
+}
+
+document.addEventListener("click", function(e) {
+  if (!e.target.closest(".theme-dropdown-wrap")) {
+    const dd = document.getElementById("theme-dropdown");
+    if (dd) dd.classList.remove("open");
+  }
+});
+
+document.getElementById("theme-dropdown").innerHTML = THEMES.map(t => `
+  <div class="theme-option${t.id===currentTheme?" active":""}" data-theme="${t.id}" onclick="applyTheme('${t.id}')">
+    <div class="theme-swatch" style="background:${t.swatch};"></div>
+    ${t.icon} ${t.label}
+  </div>`).join("");
+
+applyTheme(currentTheme);
+
+
+refresh();
+setInterval(refresh, 30000);
+</script>
+</body>
+</html>

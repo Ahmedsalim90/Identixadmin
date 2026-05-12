@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDentix – Requests</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+
+<style>
+
+  :root {
+    --purple:       #8a2be2;
+    --purple-light: #ede9fe;
+    --purple-mid:   #9d4edd;
+    --sidebar-bg:   #ffffff;
+    --sidebar-border: #8a2be2;
+    --sidebar-w:    220px;
+    --topbar-h:     60px;
+    --text:         #1a1033;
+    --text-muted:   #6b7280;
+    --border:       #e5e7eb;
+    --bg:           #f4f3ff;
+    --card-bg:      #ffffff;
+    --green:        #10b981;
+    --red:          #ef4444;
+    --amber:        #f59e0b;
+    --blue:         #3b82f6;
+    --radius:       12px;
+    --shadow:       0 1px 3px rgba(0,0,0,.08);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+ 
+  #sidebar { width: var(--sidebar-w); background: var(--sidebar-bg); border-right: 2px solid var(--sidebar-border); height: 100vh; position: fixed; top:0; left:0; display:flex; flex-direction:column; z-index:200; transition: transform .3s ease; overflow-y:auto; box-shadow: 2px 0 12px rgba(138,43,226,0.10); }
+  .sidebar-logo { padding: 16px; border-bottom: 1.5px solid rgba(138,43,226,.18); display:flex; align-items:center; justify-content:center; background:#fff; }
+  .sidebar-logo img { width: 140px; height:auto; object-fit:contain; display:block; }
+  .sidebar-section { padding: 16px 12px 4px; font-size:10px; font-weight:700; letter-spacing:1.2px; color:var(--purple); text-transform:uppercase; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:10px 16px; color:#444; font-size:13px; border-radius:8px; margin:2px 8px; cursor:pointer; text-decoration:none; transition:all .2s; font-weight:500; }
+  .nav-item:hover { background: rgba(138,43,226,.08); color: var(--purple); }
+  .nav-item.active { background: var(--purple); color: #fff; }
+  .nav-item i { width:16px; text-align:center; font-size:13px; }
+  .badge-count { margin-left:auto; background:var(--red); color:#fff; font-size:10px; font-weight:700; padding:2px 6px; border-radius:20px; min-width:18px; text-align:center; }
+  .sidebar-footer { margin-top:auto; padding:12px; border-top:1.5px solid rgba(138,43,226,.18); background:#fff; }
+  .admin-row { display:flex; align-items:center; gap:10px; padding:8px; border-radius:8px; cursor:pointer; text-decoration:none; }
+  .admin-row:hover { background: rgba(138,43,226,.07); }
+  .avatar { width:34px; height:34px; border-radius:50%; background:var(--purple); display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+  .admin-name { color:var(--text); font-size:12px; font-weight:700; }
+  .admin-role { color:var(--text-muted); font-size:10px; }
+  .logout-btn { display:flex; align-items:center; gap:8px; padding:8px 10px; color:#888; font-size:12px; cursor:pointer; border-radius:8px; margin-top:4px; font-weight:600; transition:all .2s; }
+  .logout-btn:hover { background: rgba(255,0,0,.08); color:#f87171; }
+
+  #overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:199; }
+  #main { margin-left: var(--sidebar-w); flex:1; display:flex; flex-direction:column; min-height:100vh; transition:margin .3s ease; }
+
+  
+  #topbar { height:var(--topbar-h); background:var(--card-bg); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 24px; gap:16px; position:sticky; top:0; z-index:100; }
+  #menu-toggle { display:none; background:none; border:none; font-size:18px; color:var(--text); cursor:pointer; padding:4px; }
+  .topbar-title { font-size:17px; font-weight:700; flex-shrink:0; }
+  .topbar-right { margin-left:auto; display:flex; align-items:center; gap:14px; }
+  .notif-btn { position:relative; background:none; border:none; cursor:pointer; font-size:16px; color:var(--text-muted); padding:6px; }
+  .notif-dot { position:absolute; top:3px; right:3px; width:8px; height:8px; border-radius:50%; background:var(--red); border:2px solid #fff; }
+  .bell-count {
+    position: absolute; top: 0px; right: 0px;
+    background: var(--red); color: #fff;
+    font-size: 9px; font-weight: 700;
+    min-width: 16px; height: 16px;
+    border-radius: 20px; padding: 0 4px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff;
+    opacity: 0; transform: scale(0.6);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .bell-count.visible { opacity: 1; transform: scale(1); }
+  .topbar-user { display:flex; align-items:center; gap:8px; cursor:pointer; padding:4px 8px; border-radius:8px; text-decoration:none; }
+  .topbar-user:hover { background:var(--bg); }
+  .topbar-user .avatar { width:30px; height:30px; font-size:11px; }
+  .topbar-user .uname { font-size:13px; font-weight:600; color:var(--text); }
+  .topbar-user .urole { font-size:10px; color:var(--text-muted); }
+
+ 
+  #content { padding:24px; flex:1; }
+  .page-header { margin-bottom:20px; display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  .page-title { font-size:20px; font-weight:700; }
+  .page-sub { font-size:13px; color:var(--text-muted); margin-top:3px; }
+
+  
+  .card { background:var(--card-bg); border-radius:var(--radius); box-shadow:var(--shadow); padding:20px; }
+  .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .card-title { font-size:14px; font-weight:700; }
+
+  
+  .table-wrap { overflow-x:auto; }
+  .data-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .data-table th { text-align:left; padding:9px 12px; font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; border-bottom:2px solid var(--border); white-space:nowrap; }
+  .data-table td { padding:11px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .data-table tr:last-child td { border-bottom:none; }
+  .data-table tbody tr:hover td { background:var(--bg); }
+  .stud-av { width:30px; height:30px; border-radius:50%; background:var(--purple-light); color:var(--purple); font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .stud-row { display:flex; align-items:center; gap:8px; }
+  .stud-name { font-weight:600; font-size:12px; }
+  .stud-sub { font-size:10px; color:var(--text-muted); }
+
+ 
+  .pill { padding:3px 10px; border-radius:20px; font-size:10px; font-weight:700; white-space:nowrap; display:inline-block; }
+  .pill-green  { background:#d1fae5; color:#065f46; }
+  .pill-purple { background:var(--purple-light); color:var(--purple); }
+  .pill-amber  { background:#fef3c7; color:#92400e; }
+  .pill-blue   { background:#dbeafe; color:#1e40af; }
+  .pill-red    { background:#fee2e2; color:#991b1b; }
+  .pill-gray   { background:#f3f4f6; color:#374151; }
+
+  
+  .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:none; transition:all .2s; text-decoration:none; }
+  .btn-primary { background:var(--purple); color:#fff; box-shadow:0 2px 8px rgba(138,43,226,.25); }
+  .btn-primary:hover { background:#6a0dad; transform:translateY(-1px); }
+  .btn-outline { background:transparent; color:var(--purple); border:1.5px solid var(--purple); }
+  .btn-outline:hover { background:var(--purple-light); }
+  .btn-sm { padding:5px 11px; font-size:11px; }
+  .btn-danger { background:#fee2e2; color:var(--red); }
+  .btn-danger:hover { background:#fecaca; }
+  .btn-green { background:#d1fae5; color:#065f46; }
+  .btn-green:hover { background:#a7f3d0; }
+
+  
+  .toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+  .search-wrap { position:relative; flex:1; min-width:200px; }
+  .search-wrap i { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:12px; }
+  .search-wrap input { width:100%; padding:8px 12px 8px 32px; border:1.5px solid var(--border); border-radius:8px; font-size:13px; color:var(--text); background:var(--card-bg); outline:none; transition:border .2s; }
+  .search-wrap input:focus { border-color:var(--purple); }
+  .filter-select { padding:8px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:13px; color:var(--text); background:var(--card-bg); outline:none; cursor:pointer; }
+  .filter-select:focus { border-color:var(--purple); }
+
+ 
+  .empty-state { text-align:center; padding:56px 20px; color:var(--text-muted); }
+  .empty-state i { font-size:48px; margin-bottom:16px; opacity:.2; display:block; }
+  .empty-state h3 { font-size:16px; font-weight:700; margin-bottom:6px; color:var(--text); opacity:.5; }
+  .empty-state p { font-size:13px; max-width:340px; margin:0 auto; line-height:1.6; }
+
+  
+
+ 
+  .mini-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px; }
+  .mini-stat { background:var(--card-bg); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow); display:flex; align-items:center; gap:12px; }
+  .mini-icon { width:38px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+  .mi-purple { background:var(--purple-light); color:var(--purple); }
+  .mi-green  { background:#d1fae5; color:var(--green); }
+  .mi-amber  { background:#fef3c7; color:var(--amber); }
+  .mi-blue   { background:#dbeafe; color:var(--blue); }
+  .mi-red    { background:#fee2e2; color:var(--red); }
+  .mini-num   { font-size:22px; font-weight:700; line-height:1; }
+  .mini-label { font-size:11px; color:var(--text-muted); margin-top:2px; }
+
+ 
+  .dot-btn { background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:14px; padding:2px 6px; border-radius:4px; }
+  .dot-btn:hover { background:var(--bg); color:var(--text); }
+
+  
+  .cb { width:14px; height:14px; accent-color:var(--purple); cursor:pointer; }
+
+ 
+  .pagination { display:flex; align-items:center; gap:4px; justify-content:flex-end; margin-top:14px; }
+  .pg-btn { width:30px; height:30px; border:1.5px solid var(--border); border-radius:6px; background:var(--card-bg); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:12px; font-weight:600; color:var(--text-muted); transition:all .2s; }
+  .pg-btn:hover { border-color:var(--purple); color:var(--purple); }
+  .pg-btn.active { background:var(--purple); color:#fff; border-color:var(--purple); }
+
+  
+  body.theme-dark { --bg:#0f0f1a; --card-bg:#1a1a2e; --text:#e8e8f0; --text-muted:#9090b0; --border:#2a2a45; --shadow:0 1px 3px rgba(0,0,0,.4); --purple-light:rgba(138,43,226,0.18); --sidebar-bg:#12122a; }
+  body.theme-dark #topbar { background:#1a1a2e; border-color:#2a2a45; }
+  body.theme-dark .card, body.theme-dark .mini-stat { background:#1a1a2e; }
+  body.theme-dark .nav-item { color:#aaaacc; }
+  body.theme-dark .nav-item:hover { background:rgba(138,43,226,0.15); color:#c8b8ff; }
+  body.theme-dark .admin-name { color:#e8e8f0; }
+  body.theme-dark .logout-btn { color:#9090b0; }
+  body.theme-dark .search-wrap input, body.theme-dark .filter-select { background:#12122a; border-color:#2a2a45; color:#e8e8f0; }
+  body.theme-dark .data-table tbody tr:hover td { background:#12122a; }
+  body.theme-dark .pg-btn { background:#1a1a2e; border-color:#2a2a45; }
+  body.theme-purple { --bg:#1e0a3c; --card-bg:#2d1254; --text:#f0e8ff; --text-muted:#b89fd4; --border:#4a2080; --shadow:0 1px 4px rgba(0,0,0,.35); --purple-light:rgba(180,120,255,0.2); --sidebar-bg:#1a082e; --sidebar-border:#c084fc; }
+  body.theme-purple #topbar { background:#2d1254; border-color:#4a2080; }
+  body.theme-purple .card, body.theme-purple .mini-stat { background:#2d1254; }
+  body.theme-purple .nav-item { color:#c8aef0; }
+  body.theme-purple .nav-item:hover { background:rgba(192,132,252,0.15); color:#f0e8ff; }
+  body.theme-purple .admin-name, body.theme-purple .topbar-user .uname { color:#f0e8ff; }
+  body.theme-purple .search-wrap input, body.theme-purple .filter-select { background:#1a082e; border-color:#4a2080; color:#f0e8ff; }
+  body.theme-purple .data-table tbody tr:hover td { background:#1a082e; }
+  body.theme-purple .pg-btn { background:#2d1254; border-color:#4a2080; }
+
+  .theme-btn { background:none; border:1px solid var(--border); color:var(--text-muted); padding:6px 10px; border-radius:8px; cursor:pointer; font-size:13px; display:flex; align-items:center; gap:6px; transition:all .2s; white-space:nowrap; }
+  .theme-btn:hover { border-color:var(--purple); color:var(--purple); }
+  .theme-dropdown-wrap { position:relative; }
+  .theme-dropdown { display:none; position:absolute; top:calc(100% + 8px); right:0; background:var(--card-bg); border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.15); padding:6px; min-width:160px; z-index:500; }
+  .theme-dropdown.open { display:block; }
+  .theme-option { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:7px; cursor:pointer; font-size:13px; font-weight:500; color:var(--text); transition:background .15s; }
+  .theme-option:hover { background:var(--purple-light); color:var(--purple); }
+  .theme-option.active { background:var(--purple-light); color:var(--purple); font-weight:700; }
+  .theme-swatch { width:14px; height:14px; border-radius:50%; flex-shrink:0; border:1.5px solid rgba(0,0,0,.1); }
+
+  @media (max-width:768px) {
+    #sidebar { transform:translateX(-100%); }
+    #sidebar.open { transform:translateX(0); }
+    #overlay.show { display:block; }
+    #main { margin-left:0; }
+    #menu-toggle { display:block; }
+    .topbar-user .uname, .topbar-user .urole { display:none; }
+    #content { padding:16px; }
+    .mini-stats { grid-template-columns:1fr 1fr; }
+  }
+
+
+ 
+  .state-box { display:none; flex-direction:column; align-items:center; justify-content:center; padding:72px 24px; text-align:center; }
+  .state-box.visible { display:flex; }
+  .state-icon { width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:18px; }
+  .si-pending { background:#fef3c7; color:var(--amber); }
+  .si-empty   { background:#d1fae5; color:var(--green); }
+  .si-error   { background:#fee2e2; color:var(--red);   }
+  .si-loading { background:var(--purple-light); color:var(--purple); }
+  .state-title { font-size:17px; font-weight:700; margin-bottom:6px; }
+  .state-sub   { font-size:13px; color:var(--text-muted); max-width:360px; line-height:1.7; }
+
+ 
+  .req-row { cursor:pointer; transition:background .15s; }
+  .req-row:hover td { background:var(--bg); }
+  .req-row.selected td { background:rgba(138,43,226,.05); }
+
+  
+  .pill-high   { background:#fee2e2; color:#991b1b; }
+  .pill-normal { background:#dbeafe; color:#1e40af; }
+  .pill-low    { background:#f3f4f6; color:#374151; }
+
+  
+  .drawer-backdrop { display:none; position:fixed; inset:0; background:rgba(10,0,30,.55); z-index:800; backdrop-filter:blur(4px); }
+  .drawer-backdrop.open { display:block; }
+  .drawer {
+    position:fixed; top:0; right:-480px; width:460px; max-width:100vw;
+    height:100vh; background:var(--card-bg); z-index:801;
+    box-shadow:-8px 0 32px rgba(0,0,0,.18);
+    display:flex; flex-direction:column;
+    transition:right .35s cubic-bezier(.4,0,.2,1);
+    overflow:hidden;
+  }
+  .drawer.open { right:0; }
+  .drawer-header { padding:20px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+  .drawer-title  { font-size:15px; font-weight:700; }
+  .drawer-close  { background:none; border:none; font-size:18px; color:var(--text-muted); cursor:pointer; padding:4px 8px; border-radius:6px; }
+  .drawer-close:hover { background:var(--bg); color:var(--text); }
+  .drawer-body   { flex:1; overflow-y:auto; padding:20px 24px; }
+  .drawer-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; flex-shrink:0; }
+
+  .info-group { margin-bottom:18px; }
+  .info-label { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.6px; margin-bottom:5px; }
+  .info-value { font-size:13px; font-weight:500; }
+
+  .student-card-mini { display:flex; align-items:center; gap:14px; background:var(--bg); border-radius:10px; padding:14px; margin-bottom:18px; }
+  .student-card-mini .stud-av { width:44px; height:44px; font-size:15px; }
+
+  
+  .bulk-bar { display:none; align-items:center; gap:10px; padding:10px 16px; background:var(--purple-light); border-radius:8px; margin-bottom:12px; flex-wrap:wrap; }
+  .bulk-bar.visible { display:flex; }
+  .bulk-label { font-size:13px; font-weight:700; color:var(--purple); flex:1; }
+
+  
+  .timeline { position:relative; padding-left:20px; }
+  .timeline::before { content:''; position:absolute; left:6px; top:4px; bottom:0; width:2px; background:var(--border); }
+  .tl-item { position:relative; padding-bottom:16px; }
+  .tl-dot  { position:absolute; left:-17px; top:3px; width:10px; height:10px; border-radius:50%; background:var(--purple); border:2px solid var(--card-bg); }
+  .tl-dot.done  { background:var(--green); }
+  .tl-dot.pend  { background:var(--amber); }
+  .tl-text { font-size:12px; font-weight:600; }
+  .tl-sub  { font-size:11px; color:var(--text-muted); margin-top:2px; }
+
+  
+  body.theme-dark  .drawer          { background:#1a1a2e; }
+  body.theme-dark  .student-card-mini { background:#0f0f1a; }
+  body.theme-dark  .bulk-bar        { background:rgba(138,43,226,.15); }
+  body.theme-purple .drawer         { background:#2d1254; }
+  body.theme-purple .student-card-mini { background:#1a082e; }
+  body.theme-purple .bulk-bar       { background:rgba(192,132,252,.12); }
+
+</style>
+</head>
+<body>
+
+<div id="overlay" onclick="closeSidebar()"></div>
+<aside id="sidebar">
+  <div class="sidebar-logo"><img src="./images/IMG-20260421-WA0116-removebg-preview.png" alt="IDentix logo"></div>
+ <div class="sidebar-section">Management</div>
+  <a href="dashboard.html" class="nav-item"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+  <a href="students.html"  class="nav-item"><i class="fa-solid fa-users"></i> Students</a>
+  <a href="idcards.html"   class="nav-item"><i class="fa-solid fa-id-card"></i> ID Cards</a>
+  <a href="enrollments.html" class="nav-item"><i class="fa-solid fa-user-plus"></i> Enrollments</a>
+  <a href="generate.html"  class="nav-item"><i class="fa-solid fa-fingerprint"></i> Generate IDs</a>
+  <a href="requests.html"  class="nav-item  active"><i class="fa-solid fa-inbox"></i> Requests<span class="badge-count" id="sidebar-requests">—</span></a>
+  <div class="sidebar-footer">
+    <a href="profile.html" class="admin-row">
+      <div class="avatar" id="sidebar-avatar">?</div>
+      <div><div class="admin-name" id="sidebar-username">Loading...</div><div class="admin-role">Super Admin</div></div>
+    </a>
+    <div class="logout-btn" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</div>
+  </div>
+</aside>
+<div id="main">
+
+<header id="topbar">
+  <button id="menu-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+  <div class="topbar-title">Requests</div>
+  <div class="topbar-right">
+    <div class="theme-dropdown-wrap">
+      <button class="theme-btn" onclick="toggleThemeDropdown()"><span id="theme-icon">☀️</span> Theme</button>
+      <div class="theme-dropdown" id="theme-dropdown"></div>
+    </div>
+    <a href="requests.html" style="text-decoration:none;"><button class="notif-btn" id="bell-btn" title="View requests"><i class="fa-solid fa-bell"></i><span class="bell-count" id="bell-count"></span></button></a>
+    <a href="profile.html" class="topbar-user">
+      <div class="avatar" id="topbar-avatar">?</div>
+      <div><div class="uname" id="topbar-username">Loading...</div><div class="urole">Super Admin</div></div>
+      <i class="fa-solid fa-chevron-down" style="font-size:10px;color:var(--text-muted);margin-left:4px;"></i>
+    </a>
+  </div>
+</header>
+<div id="content">
+
+
+<div class="drawer-backdrop" id="drawer-bg" onclick="closeDrawer()"></div>
+<div class="drawer" id="detail-drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">Request Details</div>
+    <button class="drawer-close" onclick="closeDrawer()"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="drawer-body" id="drawer-body">
+   
+  </div>
+  <div class="drawer-footer" id="drawer-footer">
+    
+  </div>
+</div>
+
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Requests</div>
+    <div class="page-sub">Pending ID card requests waiting for review</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <button class="btn btn-outline btn-sm" onclick="loadRequests()">
+      <i class="fa-solid fa-rotate"></i> Refresh
+    </button>
+  </div>
+</div>
+
+
+<div class="mini-stats">
+  <div class="mini-stat"><div class="mini-icon mi-amber"><i class="fa-solid fa-inbox"></i></div><div><div class="mini-num" id="ms-total">—</div><div class="mini-label">Total Pending</div></div></div>
+  <div class="mini-stat"><div class="mini-icon mi-red"  ><i class="fa-solid fa-fire"></i></div><div><div class="mini-num" id="ms-high">—</div><div class="mini-label">High Priority</div></div></div>
+  <div class="mini-stat"><div class="mini-icon mi-blue" ><i class="fa-solid fa-hourglass-half"></i></div><div><div class="mini-num" id="ms-normal">—</div><div class="mini-label">Normal</div></div></div>
+  <div class="mini-stat"><div class="mini-icon mi-green"><i class="fa-solid fa-clock-rotate-left"></i></div><div><div class="mini-num" id="ms-oldest">—</div><div class="mini-label">Oldest (days)</div></div></div>
+</div>
+
+
+<div class="card">
+
+ 
+  <div class="bulk-bar" id="bulk-bar">
+    <span class="bulk-label" id="bulk-label">0 selected</span>
+    <button class="btn btn-green btn-sm" onclick="bulkApprove()"><i class="fa-solid fa-check"></i> Approve</button>
+    <button class="btn btn-danger btn-sm" onclick="bulkReject()"><i class="fa-solid fa-xmark"></i> Reject</button>
+  </div>
+
+  
+  <div class="toolbar">
+    <div class="search-wrap">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="search-input" placeholder="Search by name, ID or department…" oninput="filterRequests()">
+    </div>
+    <select class="filter-select" id="filter-priority" onchange="filterRequests()">
+      <option value="">All Priorities</option>
+      <option value="high">High</option>
+      <option value="normal">Normal</option>
+      <option value="low">Low</option>
+    </select>
+    <select class="filter-select" id="filter-dept" onchange="filterRequests()">
+      <option value="">All Departments</option>
+    </select>
+    <select class="filter-select" id="filter-sort" onchange="filterRequests()">
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+      <option value="priority">Priority</option>
+      <option value="name">Name A–Z</option>
+    </select>
+  </div>
+
+ 
+  <div id="table-wrap" style="display:none;">
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width:36px;"><input type="checkbox" class="cb" id="chk-all" onchange="toggleAll(this)"></th>
+            <th>#</th>
+            <th>Student</th>
+            <th>Student ID</th>
+            <th>Department</th>
+            <th>Requested</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="requests-tbody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+  
+  <div class="state-box" id="state-loading">
+    <div class="state-icon si-loading"><i class="fa-solid fa-circle-notch fa-spin"></i></div>
+    <div class="state-title">Loading requests…</div>
+    <div class="state-sub">Fetching pending requests. Please wait.</div>
+  </div>
+
+  <div class="state-box" id="state-empty">
+    <div class="state-icon si-empty"><i class="fa-solid fa-inbox"></i></div>
+    <div class="state-title">No pending requests</div>
+    <div class="state-sub">All ID card requests have been processed. New requests will appear here automatically when students submit.</div>
+  </div>
+
+  <div class="state-box" id="state-error">
+    <div class="state-icon si-error"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    <div class="state-title">Could not load requests</div>
+    <div class="state-sub" id="error-msg">Check your internet connexion and try again.</div>
+    <button class="btn btn-outline" style="margin-top:18px;" onclick="loadRequests()">
+      <i class="fa-solid fa-rotate"></i> Retry
+    </button>
+  </div>
+
+<script>
+
+const API_BASE = "https://identix-api-production.up.railway.app";  
+
+let ALL_REQUESTS = [];
+let FILTERED     = [];
+let SELECTED     = new Set();
+let PAGE = 1;
+const PER_PAGE = 10;
+
+
+async function apiGet(path) {
+  if (!API_BASE) throw new Error('API_BASE is not configured. Open generate.html and set the API_BASE variable at the top of the script.');
+  const res = await fetch(API_BASE + path, {
+    headers: { 'Authorization': 'Bearer ' + (sessionStorage.getItem('identix_token') || '') }
+  });
+  if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+  return res.json();
+}
+
+async function apiPost(path, body = {}) {
+  if (!API_BASE) throw new Error('API_BASE is not configured.');
+  const res = await fetch(API_BASE + path, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + (sessionStorage.getItem('identix_token') || '')
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(res.status + ' ' + res.statusText);
+  return res.json();
+}
+
+
+async function loadRequests() {
+  showState('loading');
+  SELECTED.clear(); updateBulk();
+
+  try {
+    
+    let json;
+    const PATHS = ['/students', '/api/students', '/api/v1/students'];
+    for (const path of PATHS) {
+      try {
+        const r = await fetch(API_BASE + path, {
+          headers: { 'Authorization': 'Bearer ' + (sessionStorage.getItem('identix_token') || '') }
+        });
+        if (r.ok) { json = await r.json(); break; }
+      } catch(_) {}
+    }
+    if (!json) throw new Error('Could not reach the students endpoint. Check your API connection.');
+
+    const raw = Array.isArray(json) ? json
+              : Array.isArray(json.students) ? json.students
+              : Array.isArray(json.data) ? json.data
+              : [];
+
+  
+    ALL_REQUESTS = raw
+      .filter(s => {
+        const st = String(s.idStatus || s.id_status || s.status || 'pending').toLowerCase();
+        return !['generated','done','completed','issued','active','approved'].includes(st);
+      })
+      .map(s => ({
+        id:          String(s.student_id || s.studentId || s.id || s._id || ''),
+        studentId:   String(s.student_id || s.studentId || s.id || s._id || ''),
+        name:        s.name || s.full_name || s.fullName
+                     || ((s.first_name||s.firstName||'') + ' ' + (s.last_name||s.lastName||'')).trim()
+                     || 'Unknown',
+        department:  s.department || s.dept || s.faculty || '—',
+        requestedAt: s.created_at || s.createdAt || s.registeredAt || s.enrollment_date || null,
+        enrolledAt:  s.created_at || s.createdAt || null,
+        priority:    'normal',
+        status:      'pending',
+        photo:       s.photo_url || s.photoUrl || s.photo || null,
+        notes:       null,
+      }));
+   
+
+    updateStats();
+    populateDeptFilter();
+    FILTERED = [...ALL_REQUESTS];
+    sortAndRender();
+    showState(ALL_REQUESTS.length ? 'table' : 'empty');
+
+  } catch (err) {
+    document.getElementById('error-msg').textContent = err.message;
+    showState('error');
+  }
+}
+
+
+function updateStats() {
+  const high   = ALL_REQUESTS.filter(r => (r.priority||'').toLowerCase() === 'high').length;
+  const normal = ALL_REQUESTS.filter(r => (r.priority||'normal').toLowerCase() === 'normal').length;
+  const oldest = ALL_REQUESTS.reduce((max, r) => {
+    const days = Math.floor((Date.now() - new Date(r.requestedAt)) / 86400000);
+    return days > max ? days : max;
+  }, 0);
+
+  setText('ms-total',  ALL_REQUESTS.length);
+  setText('ms-high',   high);
+  setText('ms-normal', normal);
+  setText('ms-oldest', old );
+  const badge = document.getElementById('sidebar-requests');
+ 
+  const _bc = document.getElementById('bell-count');
+  const _pc = parseInt(document.getElementById('sidebar-requests').textContent) || 0;
+  if (_bc) {
+    _bc.textContent = _pc > 99 ? '99+' : (_pc > 0 ? String(_pc) : '');
+    _pc > 0 ? _bc.classList.add('visible') : _bc.classList.remove('visible');
+  }
+  if (badge) badge.textContent = ALL_REQUESTS.length;
+}
+
+function populateDeptFilter() {
+  const depts = [...new Set(ALL_REQUESTS.map(r => r.department).filter(Boolean))].sort();
+  const sel = document.getElementById('filter-dept');
+  sel.innerHTML = '<option value="">All Departments</option>' +
+    depts.map(d => `<option value="${d}">${d}</option>`).join('');
+}
+
+
+function filterRequests() {
+  const q    = document.getElementById('search-input').value.toLowerCase();
+  const pri  = document.getElementById('filter-priority').value.toLowerCase();
+  const dept = document.getElementById('filter-dept').value;
+  FILTERED = ALL_REQUESTS.filter(r =>
+    (!q    || (r.name + r.studentId + r.department).toLowerCase().includes(q)) &&
+    (!pri  || (r.priority || 'normal').toLowerCase() === pri) &&
+    (!dept || r.department === dept)
+  );
+  PAGE = 1; sortAndRender();
+}
+
+function sortAndRender() {
+  const sort = document.getElementById('filter-sort').value;
+  const pr   = { high:0, normal:1, low:2 };
+  const sorted = [...FILTERED].sort((a, b) => {
+    if (sort === 'oldest')   return new Date(a.requestedAt) - new Date(b.requestedAt);
+    if (sort === 'priority') return (pr[a.priority?.toLowerCase()]??1) - (pr[b.priority?.toLowerCase()]??1);
+    if (sort === 'name')     return a.name.localeCompare(b.name);
+    return new Date(b.requestedAt) - new Date(a.requestedAt); // newest
+  });
+  renderTable(sorted);
+}
+
+
+function renderTable(data) {
+  const tbody  = document.getElementById('requests-tbody');
+  const start  = (PAGE - 1) * PER_PAGE;
+  const slice  = data.slice(start, start + PER_PAGE);
+
+  if (!slice.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div style="text-align:center;padding:28px;color:var(--text-muted);font-size:13px;">No requests match your filters.</div></td></tr>`;
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = slice.map((r, i) => {
+    const priClass = r.priority?.toLowerCase() === 'high' ? 'pill-high'
+                   : r.priority?.toLowerCase() === 'low'  ? 'pill-low'
+                   : 'pill-normal';
+    const priLabel = r.priority
+      ? r.priority.charAt(0).toUpperCase() + r.priority.slice(1).toLowerCase()
+      : 'Normal';
+    const daysSince = Math.floor((Date.now() - new Date(r.requestedAt)) / 86400000);
+    const dateStr   = r.requestedAt ? fmtDate(r.requestedAt) : '—';
+    const sel       = SELECTED.has(r.id);
+
+    return `
+    <tr class="req-row${sel ? ' selected' : ''}" onclick="openDrawer('${r.id}')">
+      <td onclick="event.stopPropagation()">
+        <input type="checkbox" class="cb" ${sel ? 'checked' : ''}
+          onchange="toggleRow('${r.id}', this.closest('tr'), this)">
+      </td>
+      <td style="color:var(--text-muted);font-size:11px;">${start + i + 1}</td>
+      <td>
+        <div class="stud-row">
+          <div class="stud-av" style="${r.photo ? 'padding:0;overflow:hidden;' : ''}">
+            ${r.photo
+              ? `<img src="${r.photo}" style="width:100%;height:100%;object-fit:cover;">`
+              : initials(r.name)}
+          </div>
+          <div>
+            <div class="stud-name">${r.name}</div>
+            <div class="stud-sub">${r.studentId}</div>
+          </div>
+        </div>
+      </td>
+      <td style="font-size:12px;font-weight:600;">${r.studentId}</td>
+      <td style="font-size:12px;">${r.department ?? '—'}</td>
+      <td style="font-size:11px;">
+        <div style="color:var(--text);">${dateStr}</div>
+        <div style="color:var(--text-muted);font-size:10px;">${daysSince === 0 ? 'Today' : daysSince + 'd ago'}</div>
+      </td>
+      <td><span class="pill ${priClass}">${priLabel}</span></td>
+      <td><span class="pill pill-amber">Pending</span></td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap;">
+        <button class="btn btn-green btn-sm" onclick="approveOne('${r.id}')">
+          <i class="fa-solid fa-check"></i>
+        </button>
+        <button class="btn btn-danger btn-sm" style="margin-left:4px;" onclick="rejectOne('${r.id}')">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  renderPagination(data.length);
+}
+
+function renderPagination(total) {
+  const pages = Math.ceil(total / PER_PAGE);
+  const pg = document.getElementById('pagination');
+  if (pages <= 1) { pg.innerHTML = ''; return; }
+  let html = `<div class="pg-btn" onclick="changePage(${PAGE - 1})">‹</div>`;
+  for (let i = 1; i <= pages; i++)
+    html += `<div class="pg-btn${i === PAGE ? ' active' : ''}" onclick="changePage(${i})">${i}</div>`;
+  html += `<div class="pg-btn" onclick="changePage(${PAGE + 1})">›</div>`;
+  pg.innerHTML = html;
+}
+
+function changePage(n) {
+  const pages = Math.ceil(FILTERED.length / PER_PAGE);
+  if (n < 1 || n > pages) return;
+  PAGE = n; sortAndRender();
+}
+
+
+function toggleRow(id, row, cb) {
+  if (SELECTED.has(id)) SELECTED.delete(id);
+  else                   SELECTED.add(id);
+  row.classList.toggle('selected', SELECTED.has(id));
+  cb.checked = SELECTED.has(id);
+  updateBulk();
+}
+
+function toggleAll(masterCb) {
+  const slice = FILTERED.slice((PAGE-1)*PER_PAGE, PAGE*PER_PAGE);
+  slice.forEach(r => masterCb.checked ? SELECTED.add(r.id) : SELECTED.delete(r.id));
+  document.querySelectorAll('#requests-tbody .cb').forEach((cb, i) => {
+    cb.checked = masterCb.checked;
+    cb.closest('tr').classList.toggle('selected', masterCb.checked);
+  });
+  updateBulk();
+}
+
+function updateBulk() {
+  const n   = SELECTED.size;
+  const bar = document.getElementById('bulk-bar');
+  bar.classList.toggle('visible', n > 0);
+  setText('bulk-label', n + ' request' + (n !== 1 ? 's' : '') + ' selected');
+}
+
+async function approveOne(id) {
+  if (!confirm('Approve this request and generate the student ID card?')) return;
+  try {
+    
+    const res = await fetch(API_BASE + '/idcards/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (sessionStorage.getItem('identix_token') || '')
+      },
+      body: JSON.stringify({ studentIds: [id] })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Generation failed: ' + res.status);
+    }
+    removeRequest(id);
+    closeDrawer();
+    alert('✅ ID card generated for student ' + id);
+  } catch(e) { alert('Approve failed: ' + e.message); }
+}
+
+async function rejectOne(id) {
+  const reason = prompt('Reason for rejection (optional):');
+  if (reason === null) return; 
+ 
+  removeRequest(id);
+  closeDrawer();
+  console.log('Request rejected locally (no server endpoint):', id, reason);
+}
+
+async function bulkApprove() {
+  const ids = [...SELECTED];
+  if (!ids.length) return;
+  if (!confirm(`Approve ${ids.length} request(s) and generate their ID cards?`)) return;
+  try {
+    const res = await fetch(API_BASE + '/idcards/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (sessionStorage.getItem('identix_token') || '')
+      },
+      body: JSON.stringify({ studentIds: ids })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Bulk generation failed: ' + res.status);
+    }
+    ids.forEach(removeRequest);
+    SELECTED.clear(); updateBulk();
+    alert(`✅ ${ids.length} ID card(s) generated.`);
+  } catch(e) { alert('Bulk approve failed: ' + e.message); }
+}
+
+async function bulkReject() {
+  const ids = [...SELECTED];
+  if (!ids.length) return;
+  const reason = prompt(`Reason for rejecting ${ids.length} request(s) (optional):`);
+  if (reason === null) return;
+ 
+  ids.forEach(removeRequest);
+  SELECTED.clear(); updateBulk();
+  console.log('Bulk rejected locally:', ids, reason);
+}
+
+function removeRequest(id) {
+  ALL_REQUESTS = ALL_REQUESTS.filter(r => r.id != id);
+  FILTERED     = FILTERED.filter(r => r.id != id);
+  SELECTED.delete(id);
+  updateStats();
+  sortAndRender();
+  if (!ALL_REQUESTS.length) showState('empty');
+}
+
+function openDrawer(id) {
+  const r = ALL_REQUESTS.find(r => r.id == id);
+  if (!r) return;
+
+  const priClass = r.priority?.toLowerCase() === 'high' ? 'pill-high'
+                 : r.priority?.toLowerCase() === 'low'  ? 'pill-low'
+                 : 'pill-normal';
+  const priLabel = r.priority
+    ? r.priority.charAt(0).toUpperCase() + r.priority.slice(1).toLowerCase()
+    : 'Normal';
+  const daysSince = Math.floor((Date.now() - new Date(r.requestedAt)) / 86400000);
+
+  document.getElementById('drawer-body').innerHTML = `
+    <div class="student-card-mini">
+      <div class="stud-av" style="width:44px;height:44px;font-size:15px;${r.photo?'padding:0;overflow:hidden;':''}">
+        ${r.photo
+          ? `<img src="${r.photo}" style="width:100%;height:100%;object-fit:cover;">`
+          : initials(r.name)}
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:700;">${r.name}</div>
+        <div style="font-size:12px;color:var(--text-muted);">${r.studentId} · ${r.department ?? '—'}</div>
+      </div>
+    </div>
+
+    <div class="info-group">
+      <div class="info-label">Priority</div>
+      <div class="info-value"><span class="pill ${priClass}">${priLabel}</span></div>
+    </div>
+    <div class="info-group">
+      <div class="info-label">Status</div>
+      <div class="info-value"><span class="pill pill-amber">Pending</span></div>
+    </div>
+    <div class="info-group">
+      <div class="info-label">Requested</div>
+      <div class="info-value">${r.requestedAt ? fmtDate(r.requestedAt) : '—'} <span style="color:var(--text-muted);font-size:11px;">(${daysSince === 0 ? 'today' : daysSince + ' day(s) ago'})</span></div>
+    </div>
+    ${r.notes ? `<div class="info-group"><div class="info-label">Notes</div><div class="info-value" style="font-size:13px;line-height:1.6;color:var(--text-muted);">${r.notes}</div></div>` : ''}
+
+    <div class="info-label" style="margin-bottom:10px;">Request Timeline</div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot done"></div>
+        <div class="tl-text">Student enrolled</div>
+        <div class="tl-sub">${r.enrolledAt ? fmtDate(r.enrolledAt) : 'On enrollment'}</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot done"></div>
+        <div class="tl-text">ID card requested</div>
+        <div class="tl-sub">${r.requestedAt ? fmtDate(r.requestedAt) : '—'}</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot pend"></div>
+        <div class="tl-text">Awaiting admin review</div>
+        <div class="tl-sub">Pending</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot" style="background:var(--border);"></div>
+        <div class="tl-text" style="color:var(--text-muted);">ID card generated</div>
+        <div class="tl-sub">Not yet</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('drawer-footer').innerHTML = `
+    <button class="btn btn-green" style="flex:1;" onclick="approveOne('${r.id}')">
+      <i class="fa-solid fa-check"></i> Approve
+    </button>
+    <button class="btn btn-danger" style="flex:1;" onclick="rejectOne('${r.id}')">
+      <i class="fa-solid fa-xmark"></i> Reject
+    </button>
+  `;
+
+  document.getElementById('drawer-bg').classList.add('open');
+  document.getElementById('detail-drawer').classList.add('open');
+}
+
+function closeDrawer() {
+  document.getElementById('drawer-bg').classList.remove('open');
+  document.getElementById('detail-drawer').classList.remove('open');
+}
+
+
+function showState(s) {
+  ['loading','empty','error'].forEach(k =>
+    document.getElementById('state-' + k).classList.toggle('visible', k === s)
+  );
+  document.getElementById('table-wrap').style.display = s === 'table' ? 'block' : 'none';
+}
+
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+
+
+ const ws = new WebSocket(API_BASE.replace('http','ws') + '/ws/requests');
+ ws.onmessage = (event) => {
+  try {
+     const msg = JSON.parse(event.data);
+     if (msg.type === 'NEW_REQUEST') {
+       ALL_REQUESTS.unshift(msg.data);
+      FILTERED = [...ALL_REQUESTS];
+     updateStats();
+      populateDeptFilter();
+      sortAndRender();
+      showState('table');
+     
+     if (Notification.permission === 'granted')
+        new Notification('New ID Request', { body: msg.data.name + ' has requested an ID card.' });     }
+     if (msg.type === 'REQUEST_UPDATED') {
+      removeRequest(msg.data.id);
+    }
+  } catch(e) { console.error('WS parse error:', e); }
+};
+
+
+loadRequests();
+</script>
+
+</div>
+</div>
+<script>
+
+
+(function() {
+  const username = sessionStorage.getItem('identix_session');
+  const name     = sessionStorage.getItem('identix_name') || username;
+  if (!username) { window.location.href = 'login.html'; return; }
+  const initials = username.slice(0,2).toUpperCase();
+  ['sidebar-username','topbar-username'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = name;
+  });
+  ['sidebar-avatar','topbar-avatar'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = initials;
+  });
+})();
+
+function handleLogout() {
+  sessionStorage.removeItem('identix_session');
+  sessionStorage.removeItem('identix_name');
+  window.location.href = 'login.html';
+}
+
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+
+const THEMES = [
+  { id:'light',  label:'Light',       swatch:'#f4f3ff', icon:'☀️' },
+  { id:'dark',   label:'Dark',        swatch:'#0f0f1a', icon:'🌙' },
+  { id:'purple', label:'Deep Purple', swatch:'#1e0a3c', icon:'💜' },
+];
+let currentTheme = localStorage.getItem('identix_theme') || 'light';
+function applyTheme(id) {
+  document.body.classList.remove('theme-dark','theme-purple');
+  if (id !== 'light') document.body.classList.add('theme-' + id);
+  currentTheme = id; localStorage.setItem('identix_theme', id);
+  document.querySelectorAll('.theme-option').forEach(el => el.classList.toggle('active', el.dataset.theme === id));
+  const t = THEMES.find(t => t.id === id);
+  const ic = document.getElementById('theme-icon'); if (ic && t) ic.textContent = t.icon;
+}
+function toggleThemeDropdown() { document.getElementById('theme-dropdown').classList.toggle('open'); }
+document.addEventListener('click', e => { if (!e.target.closest('.theme-dropdown-wrap')) { const d = document.getElementById('theme-dropdown'); if (d) d.classList.remove('open'); } });
+function buildThemeDropdown() {
+  const dd = document.getElementById('theme-dropdown');
+  if (!dd) return;
+  dd.innerHTML = THEMES.map(t => `<div class="theme-option${t.id===currentTheme?' active':''}" data-theme="${t.id}" onclick="applyTheme('${t.id}')">${t.icon} ${t.label}</div>`).join('');
+}
+buildThemeDropdown(); applyTheme(currentTheme);
+
+function initials(n) { return (n||'').split(' ').map(w=>w[0]||'').slice(0,2).join('').toUpperCase(); }
+function getUsers()   { return JSON.parse(localStorage.getItem('identix_users') || '{}'); }
+function fmtDate(d)   { return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+
+</script>
+</body>
+</html>
