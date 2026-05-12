@@ -564,14 +564,6 @@ async function handleFind() {
   const all   = Object.values(users);
 
  
-   const res  = await fetch('/api/auth/find-account', { method:'POST', 
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-    });
-   const data = await res.json();
-   if (!data.found) { showAlert('s1-alert','error','No account found.'); return; }
-   recoveredUser = data.user;
- 
   const user = all.find(u =>
     (u.username && u.username.toLowerCase() === val.toLowerCase()) ||
     (u.email    && u.email.toLowerCase()    === val.toLowerCase())
@@ -609,10 +601,6 @@ async function handleVerifyQuestions() {
   
   hideAlert('s2q-alert');
 
- 
-   const answers = [1,2,3].map(n => document.getElementById('qa-'+n).value.trim());
-   const res = await fetch('/api/auth/verify-answers', { method:'POST', body: JSON.stringify({ username: recoveredUser.username, answers }) });
-   if (!res.ok) { showAlert('s2q-alert','error','Answers did not match. Please try again.'); return; }
  
   goToStep3();
 }
@@ -663,10 +651,7 @@ async function handleReset() {
   if (!valid) return;
 
  
-   await fetch('/api/auth/reset-password', { method:'POST', body: JSON.stringify({ username: recoveredUser.username, newPassword: np }) });
- 
-
-  
+  // Save new password to localStorage
   const users = getUsers();
   const key   = Object.keys(users).find(k =>
     users[k].username && users[k].username.toLowerCase() === recoveredUser.username.toLowerCase()
