@@ -357,7 +357,7 @@ async function handleRegister() {
   const btn = document.getElementById('reg-btn');
   btn.classList.add('loading');
 
-  const API_BASE = 'https://identix-api-production.up.railway.app';
+  const API_BASE = 'https://identix-api.onrender.com';
   try {
     const res  = await fetch(API_BASE + '/auth/register', {
       method: 'POST',

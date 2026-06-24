@@ -490,7 +490,7 @@
 
 <script>
  
-const API_BASE = 'https://identix-api-production.up.railway.app';  
+const API_BASE = "https://identix-api.onrender.com";
 
 let ALL_PENDING   = [];   
 let FILTERED      = [];   
@@ -844,7 +844,7 @@ async function startGeneration() {
     
     const now       = new Date();
     const issued    = now.toISOString().slice(0, 10);
-    const expire    = new Date(now.getFullYear() + 4, now.getMonth(), now.getDate())
+    const expire    = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate())
                         .toISOString().slice(0, 10);
 
     animateBar(bar, 55, 80, 600);
